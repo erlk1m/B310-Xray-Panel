@@ -26,19 +26,27 @@ struct Config {
 impl Config {
     fn from_env() -> Self {
         let default_base = if cfg!(target_os = "linux") {
-            "/online/xray"
+            "/online/xray".to_string()
         } else {
-            "./dev_data"
+            if Path::new("./dev_data").exists() {
+                "./dev_data".to_string()
+            } else if Path::new("../dev_data").exists() {
+                "../dev_data".to_string()
+            } else if Path::new("./b310-xray-panel/dev_data").exists() {
+                "./b310-xray-panel/dev_data".to_string()
+            } else {
+                "./dev_data".to_string()
+            }
         };
         let default_log = if cfg!(target_os = "linux") {
-            "/tmp/xray.log"
+            "/tmp/xray.log".to_string()
         } else {
-            "./dev_data/xray.log"
+            format!("{}/xray.log", default_base)
         };
         let default_pid = if cfg!(target_os = "linux") {
-            "/tmp/xray.pid"
+            "/tmp/xray.pid".to_string()
         } else {
-            "./dev_data/xray.pid"
+            format!("{}/xray.pid", default_base)
         };
 
         let base_dir = PathBuf::from(env::var("B310_DIR").unwrap_or_else(|_| default_base.into()));
@@ -67,7 +75,41 @@ impl Config {
 
     fn xray_bin_path(&self) -> PathBuf {
         if cfg!(windows) {
-            self.base_dir.join("xray.exe")
+            let primary = self.base_dir.join("xray.exe");
+            if primary.exists() {
+                return primary;
+            }
+            let candidates = [
+                PathBuf::from("./dev_data/xray.exe"),
+                PathBuf::from("../dev_data/xray.exe"),
+                PathBuf::from("./b310-xray-panel/dev_data/xray.exe"),
+                PathBuf::from("dev_data/xray.exe"),
+                PathBuf::from("xray.exe"),
+            ];
+            for c in candidates {
+                if c.exists() {
+                    return c;
+                }
+            }
+            if let Ok(exe) = env::current_exe() {
+                if let Some(dir) = exe.parent() {
+                    let p = dir.join("xray.exe");
+                    if p.exists() {
+                        return p;
+                    }
+                    let p2 = dir.join("dev_data").join("xray.exe");
+                    if p2.exists() {
+                        return p2;
+                    }
+                    if let Some(parent) = dir.parent() {
+                        let p3 = parent.join("dev_data").join("xray.exe");
+                        if p3.exists() {
+                            return p3;
+                        }
+                    }
+                }
+            }
+            primary
         } else {
             self.base_dir.join("xray")
         }
