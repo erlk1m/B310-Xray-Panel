@@ -1,0 +1,22 @@
+# User requested exclusions
+B310/
+
+# Rust / Cargo build outputs
+/target/
+**/*.rs.bk
+Cargo.lock.orig
+
+# Local development and sensitive configs
+dev_data/
+*.log
+*.pid
+profiles.json
+config.json
+
+# System & Editor files
+.idea/
+.vscode/
+*.swp
+*.bak
+Thumbs.db
+.DS_Store

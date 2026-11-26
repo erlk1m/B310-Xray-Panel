@@ -1,0 +1,1340 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Erlkim Xray Panel - Anime Edition</title>
+<style>
+  :root {
+    --bg: #090814;
+    --bg-card: rgba(18, 15, 34, 0.82);
+    --bg-card-hover: rgba(26, 21, 48, 0.90);
+    --bg-card2: rgba(28, 22, 52, 0.72);
+    --border: rgba(236, 72, 153, 0.22);
+    --border-hover: rgba(244, 114, 182, 0.5);
+    --border-strong: rgba(236, 72, 153, 0.38);
+    --border-cyan: rgba(56, 189, 248, 0.38);
+    --text: #fdf2f8;
+    --text-sub: #fbcfe8;
+    --muted: #9d8ea9;
+    --sakura: #ff7597;
+    --sakura-glow: rgba(255, 117, 151, 0.35);
+    --pink: #ec4899;
+    --violet: #a855f7;
+    --cyan: #06b6d4;
+    --miku: #00f2fe;
+    --green: #10b981;
+    --red: #f43f5e;
+    --amber: #fbbf24;
+    --radius: 18px;
+    --radius-sm: 12px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Hiragino Kaku Gothic ProN", "Meiryo", Inter, sans-serif;
+    background:
+      radial-gradient(ellipse at 10% -5%, rgba(236, 72, 153, 0.16), transparent 50%),
+      radial-gradient(ellipse at 90% 0%, rgba(6, 182, 212, 0.14), transparent 45%),
+      radial-gradient(circle at 50% 100%, rgba(168, 85, 247, 0.12), transparent 60%),
+      var(--bg);
+    color: var(--text);
+    line-height: 1.5;
+    min-height: 100vh;
+    padding-bottom: 92px;
+    font-variant-numeric: tabular-nums;
+    position: relative;
+    overflow-x: hidden;
+  }
+
+  /* Sakura Petals CSS Animation (Pure CSS, offline, zero-CPU lag) */
+  .sakura-wrap {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    pointer-events: none; overflow: hidden; z-index: 0;
+  }
+  .petal {
+    position: absolute;
+    background: radial-gradient(circle, #ffb3c6, #ff7597);
+    border-radius: 12px 2px 12px 2px;
+    opacity: 0.22;
+    filter: drop-shadow(0 0 4px rgba(255, 117, 151, 0.4));
+    animation: petal-fall linear infinite;
+  }
+  .petal:nth-child(1) { left: 8%; width: 12px; height: 9px; animation-duration: 14s; animation-delay: 0s; }
+  .petal:nth-child(2) { left: 24%; width: 10px; height: 8px; animation-duration: 17s; animation-delay: 3s; }
+  .petal:nth-child(3) { left: 45%; width: 13px; height: 10px; animation-duration: 15s; animation-delay: 6s; }
+  .petal:nth-child(4) { left: 68%; width: 9px; height: 7px; animation-duration: 18s; animation-delay: 2s; }
+  .petal:nth-child(5) { left: 86%; width: 11px; height: 9px; animation-duration: 16s; animation-delay: 7s; }
+  .petal:nth-child(6) { left: 95%; width: 10px; height: 8px; animation-duration: 19s; animation-delay: 10s; }
+  @keyframes petal-fall {
+    0% { transform: translateY(-20px) rotate(0deg) translateX(0); opacity: 0; }
+    15% { opacity: 0.25; }
+    50% { transform: translateY(50vh) rotate(180deg) translateX(25px); opacity: 0.28; }
+    85% { opacity: 0.22; }
+    100% { transform: translateY(105vh) rotate(360deg) translateX(-20px); opacity: 0; }
+  }
+
+  .container { max-width: 720px; margin: 0 auto; padding: 14px; position: relative; z-index: 1; }
+
+  /* Anime Header */
+  header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 13px 16px; background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: var(--radius); margin-bottom: 14px;
+    backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+    box-shadow: 0 10px 30px rgba(0,0,0,.45), 0 0 20px rgba(236,72,153,.1);
+    position: relative; overflow: hidden;
+  }
+  header::before {
+    content: ""; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+    background: linear-gradient(90deg, #ff7597, #a855f7, #00f2fe);
+  }
+  .brand { display: flex; align-items: center; gap: 12px; }
+  .brand-icon {
+    width: 44px; height: 44px; border-radius: 13px;
+    background: linear-gradient(135deg, rgba(236, 72, 153, 0.25), rgba(168, 85, 247, 0.25));
+    border: 1.5px solid var(--sakura);
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 0 16px var(--sakura-glow); flex-shrink: 0;
+  }
+  .brand-icon svg { width: 34px; height: 34px; }
+  .brand h1 {
+    font-size: 1.05rem; font-weight: 800; letter-spacing: -.2px; color: #fff;
+    display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+  }
+  .brand-jp {
+    font-size: .68rem; font-weight: 600; color: #f472b6;
+    background: rgba(236, 72, 153, 0.15); border: 1px solid rgba(236, 72, 153, 0.3);
+    padding: 1px 6px; border-radius: 4px; letter-spacing: .3px;
+  }
+  .brand small { display: block; font-size: .73rem; color: var(--muted); margin-top: 1px; }
+
+  /* Anime Status Badge */
+  .badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: .7rem; font-weight: 750; padding: 5px 12px; border-radius: 999px;
+    letter-spacing: .6px;
+  }
+  .badge::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+  .badge-on {
+    background: rgba(16,185,129,.18); color: #34d399;
+    border: 1px solid rgba(16,185,129,.45);
+    box-shadow: 0 0 16px rgba(16,185,129,.25);
+  }
+  .badge-on::before { animation: pulse-dot 1.6s infinite; }
+  .badge-off {
+    background: rgba(244,63,94,.16); color: #fda4af;
+    border: 1px solid rgba(244,63,94,.38);
+    box-shadow: 0 0 14px rgba(244,63,94,.16);
+  }
+  @keyframes pulse-dot {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: .45; transform: scale(1.4); }
+  }
+
+  /* Anime Styled Cards */
+  .card {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 16px; margin-bottom: 14px;
+    backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+    box-shadow: 0 10px 28px rgba(0,0,0,.4), 0 0 18px rgba(236,72,153,.04);
+    position: relative; overflow: hidden;
+  }
+  .card::after {
+    content: ""; position: absolute; top: 0; right: 0; width: 28px; height: 2px;
+    background: linear-gradient(90deg, transparent, var(--sakura));
+    box-shadow: 0 0 8px var(--sakura);
+  }
+  .card-title {
+    font-size: .76rem; font-weight: 750; text-transform: uppercase;
+    letter-spacing: .7px; color: #fbcfe8; margin-bottom: 12px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .jp-sub {
+    font-size: .65rem; color: #f472b6; opacity: .85; font-weight: normal; margin-left: 5px;
+    letter-spacing: 0; text-transform: none;
+  }
+
+  /* Hero Cyber Reactor Power Section */
+  .hero-card {
+    background:
+      radial-gradient(circle at 50% 0%, rgba(236, 72, 153, 0.16), transparent 70%),
+      var(--bg-card);
+    text-align: center;
+    border-color: rgba(236, 72, 153, 0.3);
+  }
+  .hero-card.is-on {
+    background:
+      radial-gradient(circle at 50% 0%, rgba(6, 182, 212, 0.22), transparent 70%),
+      radial-gradient(circle at 50% 100%, rgba(16, 185, 129, 0.14), transparent 70%),
+      var(--bg-card);
+    border-color: rgba(6, 182, 212, 0.45);
+    box-shadow: 0 12px 35px rgba(0,0,0,.45), 0 0 28px rgba(6, 182, 212, 0.2);
+  }
+  .power-wrap { display: flex; flex-direction: column; align-items: center; padding: 12px 0 6px; }
+  .power-ring {
+    position: relative; padding: 12px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(236, 72, 153, 0.12), transparent 70%);
+  }
+  .power-btn {
+    width: 124px; height: 124px; border-radius: 50%;
+    border: 2.5px solid var(--border-strong);
+    background: linear-gradient(145deg, #231634, #120b1f);
+    color: #f472b6; cursor: pointer; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; transition: all .28s cubic-bezier(.4,0,.2,1);
+    box-shadow: 0 12px 32px rgba(0,0,0,.6), 0 0 20px rgba(236, 72, 153, 0.18), inset 0 1px 1px rgba(255,255,255,.1);
+  }
+  .power-btn:hover {
+    transform: translateY(-2px) scale(1.02);
+    border-color: var(--sakura); color: #fff;
+    box-shadow: 0 14px 38px rgba(0,0,0,.7), 0 0 28px rgba(255, 117, 151, 0.35);
+  }
+  .power-btn:active { transform: scale(.95); }
+  .power-btn svg { width: 44px; height: 44px; margin-bottom: 5px; }
+  .power-btn span { font-size: .72rem; font-weight: 800; letter-spacing: .9px; }
+  .power-btn.on {
+    border-color: var(--cyan); color: #38bdf8;
+    background: linear-gradient(145deg, #092c3a, #061822);
+    box-shadow: 0 0 42px rgba(6, 182, 212, 0.45), inset 0 0 25px rgba(56, 189, 248, 0.2);
+  }
+  .power-btn.busy { border-color: var(--amber); color: var(--amber); opacity: .8; pointer-events: none; }
+  .active-summary { margin-top: 14px; max-width: 100%; }
+  .active-summary .prof-name { font-size: 1.08rem; font-weight: 750; color: #fff; text-shadow: 0 0 12px rgba(255,117,151,.25); }
+  .active-summary .prof-sub { font-size: .78rem; color: var(--muted); margin-top: 3px; word-break: break-all; }
+
+  /* Stats Grid */
+  .stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .stat-box {
+    background: var(--bg-card2); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); padding: 11px 13px;
+    box-shadow: inset 0 1px 1px rgba(255,255,255,.04);
+  }
+  .stat-label { font-size: .72rem; color: var(--muted); font-weight: 550; }
+  .stat-val { font-size: .98rem; font-weight: 700; margin-top: 3px; color: var(--text); }
+  .ram-bar { height: 7px; background: rgba(10, 7, 20, 0.85); border-radius: 99px; overflow: hidden; margin-top: 9px; border: 1px solid var(--border); }
+  .ram-fill { height: 100%; background: linear-gradient(90deg, #ec4899, #00f2fe); transition: width .35s ease; border-radius: 99px; }
+
+  /* Anime Inputs */
+  label { display: block; font-size: .75rem; color: #fbcfe8; margin-bottom: 5px; font-weight: 600; }
+  input, select, textarea {
+    width: 100%; background: rgba(12, 9, 25, 0.88); color: var(--text);
+    border: 1px solid var(--border); border-radius: 10px; padding: 9px 12px;
+    font-size: .86rem; outline: none; font-family: inherit; transition: border-color .15s, box-shadow .15s;
+  }
+  input:focus, select:focus, textarea:focus {
+    border-color: var(--sakura);
+    box-shadow: 0 0 0 3px rgba(236, 72, 153, 0.2), 0 0 12px rgba(255, 117, 151, 0.25);
+  }
+  textarea { resize: vertical; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .8rem; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  @media (max-width: 480px) { .grid-2 { grid-template-columns: 1fr; } }
+  .field { margin-bottom: 11px; }
+  .row-check { display: flex; align-items: center; gap: 8px; margin: 8px 0 13px; }
+  .row-check input { width: auto; accent-color: var(--sakura); }
+  .row-check label { margin: 0; color: var(--text); font-size: .84rem; cursor: pointer; }
+
+  /* Anime Vibrant Buttons */
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    border: none; border-radius: 10px; padding: 9px 15px; font-size: .83rem;
+    font-weight: 650; cursor: pointer; transition: all .18s ease;
+  }
+  .btn:active { transform: scale(.96); }
+  .btn-primary {
+    background: linear-gradient(135deg, #ec4899, #a855f7); color: #fff;
+    box-shadow: 0 4px 16px rgba(236, 72, 153, 0.35);
+    border: 1px solid rgba(255, 117, 151, 0.3);
+  }
+  .btn-primary:hover { filter: brightness(1.12); box-shadow: 0 6px 20px rgba(236, 72, 153, 0.45); }
+  .btn-green {
+    background: linear-gradient(135deg, #10b981, #06b6d4); color: #fff;
+    box-shadow: 0 4px 16px rgba(16, 185, 129, 0.32);
+    border: 1px solid rgba(6, 182, 212, 0.3);
+  }
+  .btn-green:hover { filter: brightness(1.12); box-shadow: 0 6px 20px rgba(6, 182, 212, 0.45); }
+  .btn-red {
+    background: rgba(244, 63, 94, 0.16); color: #fda4af;
+    border: 1px solid rgba(244, 63, 94, 0.38);
+  }
+  .btn-red:hover { background: rgba(244, 63, 94, 0.28); color: #fff; }
+  .btn-ghost {
+    background: var(--bg-card2); color: var(--text);
+    border: 1px solid var(--border);
+  }
+  .btn-ghost:hover { border-color: var(--sakura); background: rgba(38, 28, 70, 0.85); color: #fff; }
+  .btn-sm { padding: 6px 11px; font-size: .75rem; border-radius: 8px; }
+  .btn-row { display: flex; gap: 8px; flex-wrap: wrap; }
+
+  /* Anime Bug Injector Box */
+  .bug-box {
+    background: linear-gradient(135deg, rgba(236, 72, 153, 0.08), rgba(6, 182, 212, 0.06));
+    border: 1px dashed rgba(255, 117, 151, 0.45);
+    border-radius: 12px; padding: 12px; margin: 12px 0;
+  }
+  .bug-box-title {
+    font-size: .73rem; font-weight: 750; color: #ff7597;
+    margin-bottom: 9px; text-transform: uppercase; letter-spacing: .6px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+
+  /* Profile Items */
+  .prof-list { display: flex; flex-direction: column; gap: 10px; }
+  .prof-item {
+    background: var(--bg-card2); border: 1px solid var(--border); border-radius: 12px;
+    padding: 12px 13px; display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    transition: all .2s;
+  }
+  .prof-item.active {
+    border-color: rgba(6, 182, 212, 0.65);
+    background: linear-gradient(90deg, rgba(6, 182, 212, 0.14), rgba(28, 22, 52, 0.75));
+    box-shadow: 0 0 16px rgba(6, 182, 212, 0.16);
+  }
+  .prof-meta { min-width: 0; flex: 1; }
+  .prof-meta strong { font-size: .9rem; display: flex; align-items: center; gap: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #fff; }
+  .prof-meta small { font-size: .74rem; color: var(--muted); display: block; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .proto-pill {
+    display: inline-block; font-size: .64rem; font-weight: 800; text-transform: uppercase;
+    padding: 2px 7px; border-radius: 5px;
+    background: rgba(236, 72, 153, 0.22); color: #fbcfe8;
+    border: 1px solid rgba(236, 72, 153, 0.4); flex-shrink: 0;
+  }
+
+  /* Terminal Log Box */
+  .term-wrap { border: 1px solid var(--border); border-radius: 12px; overflow: hidden; background: #07050f; }
+  .term-bar {
+    display: flex; align-items: center; gap: 6px; padding: 8px 12px;
+    background: rgba(255,255,255,.03); border-bottom: 1px solid var(--border);
+  }
+  .term-dot { width: 9px; height: 9px; border-radius: 50%; }
+  .term-path { font-size: .72rem; color: var(--muted); font-family: ui-monospace, monospace; margin-left: 4px; }
+  pre.log-box {
+    background: transparent; padding: 12px; font-family: ui-monospace, Consolas, monospace; font-size: .75rem;
+    color: #e2e8f0; max-height: 310px; overflow-y: auto; white-space: pre-wrap; word-break: break-all;
+    user-select: text; -webkit-user-select: text; cursor: text;
+  }
+
+  /* About Panel */
+  .about-list { display: flex; flex-direction: column; gap: 8px; }
+  .about-row {
+    display: flex; justify-content: space-between; align-items: center; gap: 12px;
+    padding: 9px 12px; background: var(--bg-card2); border: 1px solid var(--border);
+    border-radius: 10px; font-size: .81rem;
+  }
+  .about-row span { color: var(--muted); }
+  .about-row strong { color: var(--text); text-align: right; font-weight: 650; }
+  .quick-select {
+    margin-top: 11px; max-width: 320px; width: 100%;
+    background: rgba(12, 9, 25, 0.88); border: 1px solid var(--border-strong);
+    border-radius: 10px; padding: 7px 11px; font-size: .82rem; text-align: center;
+    color: var(--text);
+  }
+  .speed-val { font-size: 1.18rem; font-weight: 800; letter-spacing: -.3px; margin-top: 3px; }
+  .speed-sub { font-size: .72rem; color: var(--muted); margin-top: 4px; }
+  .dl-color { color: #00f2fe; text-shadow: 0 0 12px rgba(0, 242, 254, 0.35); }
+  .ul-color { color: #ff7597; text-shadow: 0 0 12px rgba(255, 117, 151, 0.35); }
+
+  /* OTA Upload Progress */
+  .ota-bar { height: 6px; background: rgba(7,5,15,.9); border-radius: 99px; overflow: hidden; margin-top: 10px; display: none; }
+  .ota-fill { height: 100%; width: 0%; background: linear-gradient(90deg, #ec4899, #00f2fe); transition: width .2s; }
+
+  /* Floating Bottom Anime Dock */
+  nav.tabs {
+    position: fixed; bottom: 10px; left: 50%; transform: translateX(-50%);
+    width: calc(100% - 24px); max-width: 696px; height: 62px;
+    background: rgba(16, 12, 30, 0.88); border: 1px solid var(--border-strong);
+    border-radius: 20px; backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+    box-shadow: 0 12px 36px rgba(0,0,0,.6), 0 0 24px rgba(236,72,153,.15);
+    display: flex; justify-content: space-around; align-items: center; padding: 5px; z-index: 50;
+  }
+  nav.tabs button {
+    flex: 1; height: 100%; background: none; border: none; color: var(--muted);
+    border-radius: 14px; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 3px; font-size: .71rem; font-weight: 650; cursor: pointer; transition: all .2s;
+  }
+  nav.tabs button.active {
+    color: #fff;
+    background: linear-gradient(135deg, rgba(236, 72, 153, 0.22), rgba(168, 85, 247, 0.18));
+    border: 1px solid rgba(255, 117, 151, 0.35);
+    box-shadow: 0 0 14px rgba(255, 117, 151, 0.25);
+  }
+  nav.tabs button.active svg { color: #ff7597; filter: drop-shadow(0 0 6px var(--sakura)); }
+  nav.tabs svg { width: 19px; height: 19px; }
+
+  .tab-pane { display: none; animation: animeFadeIn .22s cubic-bezier(.4,0,.2,1); }
+  .tab-pane.active { display: block; }
+  @keyframes animeFadeIn {
+    from { opacity: 0; transform: translateY(5px); }
+    to { opacity: 1; transform: none; }
+  }
+
+  .toast {
+    position: fixed; top: 16px; left: 50%; transform: translateX(-50%);
+    background: rgba(22, 16, 42, 0.96); color: #fdf2f8;
+    border: 1px solid var(--sakura); backdrop-filter: blur(12px);
+    padding: 10px 18px; border-radius: 12px; font-size: .82rem; font-weight: 650;
+    box-shadow: 0 12px 36px rgba(0,0,0,.6), 0 0 22px rgba(255, 117, 151, 0.35);
+    z-index: 99; display: none; max-width: 92vw;
+  }
+</style>
+</head>
+<body>
+<!-- Sakura Falling Petals -->
+<div class="sakura-wrap" aria-hidden="true">
+  <div class="petal"></div>
+  <div class="petal"></div>
+  <div class="petal"></div>
+  <div class="petal"></div>
+  <div class="petal"></div>
+  <div class="petal"></div>
+</div>
+
+<div id="toast" class="toast"></div>
+<div class="container">
+  <header>
+    <div class="brand">
+      <div class="brand-icon">
+        <!-- Chibi Cyber Neko Anime Mascot -->
+        <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="gHead" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#ff7597"/>
+              <stop offset="50%" stop-color="#a855f7"/>
+              <stop offset="100%" stop-color="#00f2fe"/>
+            </linearGradient>
+            <linearGradient id="gVisor" x1="12" y1="23" x2="36" y2="23" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#00f2fe"/>
+              <stop offset="100%" stop-color="#ff7597"/>
+            </linearGradient>
+          </defs>
+          <!-- Neko Ears -->
+          <polygon points="12,20 8,8 20,14" fill="url(#gHead)"/>
+          <polygon points="36,20 40,8 28,14" fill="url(#gHead)"/>
+          <polygon points="12,17 9,10 18,14" fill="#ff7597" opacity="0.85"/>
+          <polygon points="36,17 39,10 30,14" fill="#ff7597" opacity="0.85"/>
+          <!-- Chibi Face Base -->
+          <circle cx="24" cy="27" r="15" fill="#18132c" stroke="url(#gHead)" stroke-width="2.2"/>
+          <!-- Headband -->
+          <path d="M9 26 C9 17 15 12 24 12 C33 12 39 17 39 26" stroke="#ff7597" stroke-width="2" stroke-linecap="round"/>
+          <rect x="7" y="23" width="4" height="8" rx="2" fill="#00f2fe"/>
+          <rect x="37" y="23" width="4" height="8" rx="2" fill="#00f2fe"/>
+          <!-- Cyber Visor / Cute Eyes -->
+          <rect x="14" y="23" width="20" height="7" rx="3.5" fill="url(#gVisor)" opacity="0.95"/>
+          <circle cx="19" cy="26.5" r="1.5" fill="#fff"/>
+          <circle cx="29" cy="26.5" r="1.5" fill="#fff"/>
+          <!-- Cute Blushes -->
+          <ellipse cx="14" cy="33" rx="2.5" ry="1.2" fill="#ff6584" opacity="0.75"/>
+          <ellipse cx="34" cy="33" rx="2.5" ry="1.2" fill="#ff6584" opacity="0.75"/>
+          <!-- Smile -->
+          <path d="M22 33.5 Q24 35.5 26 33.5" stroke="#fdf4f8" stroke-width="1.6" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <div>
+        <h1>
+          Erlkim Xray Panel
+          <span class="brand-jp">エルキム</span>
+        </h1>
+        <small id="hdr-sub">Huawei B310s-927 • ARMv7</small>
+      </div>
+    </div>
+    <span id="hdr-badge" class="badge badge-off">DISCONNECTED</span>
+  </header>
+
+  <!-- TAB HOME -->
+  <section id="tab-home" class="tab-pane active">
+    <div id="hero-card" class="card hero-card">
+      <div class="power-wrap">
+        <div class="power-ring">
+          <button id="btn-power" class="power-btn" onclick="togglePower()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+              <path d="M12 2v10"/><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/>
+            </svg>
+            <span id="power-label">CONNECT</span>
+          </button>
+        </div>
+        <div class="active-summary">
+          <div id="home-prof-name" class="prof-name">Belum ada profil aktif</div>
+          <div id="home-prof-sub" class="prof-sub">Tambahkan &amp; pilih akun di tab Profiles</div>
+          <select id="home-prof-select" class="quick-select" style="display:none" onchange="quickSwitchProfile(this.value)"></select>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">
+        <span>Trafik Download &amp; Upload <span class="jp-sub">トラフィック監視</span></span>
+        <button class="btn btn-ghost btn-sm" onclick="resetTrafficSession()">Reset Sesi</button>
+      </div>
+      <div class="stats">
+        <div class="stat-box">
+          <div class="stat-label">↓ Download (受信)</div>
+          <div id="dl-speed" class="speed-val dl-color">0 KB/s</div>
+          <div id="dl-total" class="speed-sub">Sesi: 0 MB</div>
+          <div class="ram-bar"><div id="dl-bar" class="ram-fill" style="width:0%;background:linear-gradient(90deg,#0284c7,#00f2fe)"></div></div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-label">↑ Upload (送信)</div>
+          <div id="ul-speed" class="speed-val ul-color">0 KB/s</div>
+          <div id="ul-total" class="speed-sub">Sesi: 0 MB</div>
+          <div class="ram-bar"><div id="ul-bar" class="ram-fill" style="width:0%;background:linear-gradient(90deg,#ec4899,#ff7597)"></div></div>
+        </div>
+      </div>
+      <div id="net-raw-total" style="font-size:.71rem;color:var(--muted);margin-top:9px;text-align:center">Total Interface: ↓ 0 MB • ↑ 0 MB</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">
+        <span>Latensi &amp; Koneksi <span class="jp-sub">レイテンシと状態</span></span>
+        <button class="btn btn-ghost btn-sm" onclick="runPingTest()">Test Ping</button>
+      </div>
+      <div class="stats">
+        <div class="stat-box">
+          <div class="stat-label">Tunnel Latency (Internet)</div>
+          <div id="ping-net" class="stat-val">-- ms</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-label">Router Panel RTT</div>
+          <div id="ping-panel" class="stat-val">-- ms</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-label">Xray PID / NAT</div>
+          <div id="stat-pid" class="stat-val">Stopped</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-label">Watchdog Recoveries</div>
+          <div id="stat-wd" class="stat-val">0</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">
+        <span>Memori &amp; Uptime Router <span class="jp-sub">システム情報</span></span>
+        <span id="stat-ram-pct" style="color:var(--sakura);font-weight:700">--%</span>
+      </div>
+      <div class="stats">
+        <div class="stat-box">
+          <div class="stat-label">RAM Bebas / Total</div>
+          <div id="stat-ram" class="stat-val">-- / -- MB</div>
+          <div class="ram-bar"><div id="ram-fill" class="ram-fill" style="width:0%"></div></div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-label">Uptime (Router / Panel)</div>
+          <div id="stat-uptime" class="stat-val">-- / --</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TAB PROFILES -->
+  <section id="tab-profiles" class="tab-pane">
+    <div class="card">
+      <div class="card-title">
+        <span>Import URI Cepat <span class="jp-sub">クイックインポート</span></span>
+        <span style="font-size:.66rem;color:#f472b6">VLESS • VMess • Trojan</span>
+      </div>
+      <div class="field">
+        <textarea id="uri-input" rows="3" placeholder="Tempel link vless://, vmess://, atau trojan:// di sini..."></textarea>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="parseAndFill()">Parse ke Form</button>
+        <button class="btn btn-green" onclick="parseAndSave()">Parse &amp; Simpan</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">
+        <span id="form-mode-title">Editor Profil</span>
+        <button class="btn btn-ghost btn-sm" onclick="resetForm()">Reset</button>
+      </div>
+      <input type="hidden" id="f-id">
+      <div class="grid-2">
+        <div class="field"><label>Nama Profil</label><input id="f-name" placeholder="SG-Do-Boost"></div>
+        <div class="field">
+          <label>Protokol</label>
+          <select id="f-proto">
+            <option value="vless">VLESS</option>
+            <option value="vmess">VMess</option>
+            <option value="trojan">Trojan</option>
+          </select>
+        </div>
+      </div>
+      <div class="grid-2">
+        <div class="field"><label>Server Address (Endpoint/Bug IP)</label><input id="f-addr" placeholder="104.21.xx.xx"></div>
+        <div class="field"><label>Port</label><input id="f-port" type="number" value="443"></div>
+      </div>
+      <div class="grid-2">
+        <div class="field"><label>UUID / Password</label><input id="f-uuid" placeholder="xxxxxxxx-xxxx-..."></div>
+        <div class="field"><label>Server IP Bypass (Anti-Loop)</label><input id="f-server-ip" placeholder="Otomatis dari Address"></div>
+      </div>
+      <div class="grid-2">
+        <div class="field">
+          <label>Network</label>
+          <select id="f-net">
+            <option value="ws">WebSocket (ws)</option>
+            <option value="tcp">TCP</option>
+            <option value="grpc">gRPC</option>
+          </select>
+        </div>
+        <div class="field"><label>WS Path / gRPC Service</label><input id="f-path" value="/" placeholder="/vless-ws"></div>
+      </div>
+
+      <div class="bug-box">
+        <div class="bug-box-title">
+          <span>Custom Bug / SNI Injector</span>
+          <span style="font-size:.65rem;color:var(--sakura)">SNI &amp; Host 注入</span>
+        </div>
+        <div class="grid-2">
+          <div class="field" style="margin-bottom:0"><label>SNI (ServerName)</label><input id="f-sni" placeholder="bug.operator.com"></div>
+          <div class="field" style="margin-bottom:0"><label>Host Header</label><input id="f-host" placeholder="sg1.domainvps.com"></div>
+        </div>
+      </div>
+
+      <div class="row-check">
+        <input type="checkbox" id="f-tls" checked>
+        <label for="f-tls">Gunakan TLS</label>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="saveFormProfile()">Simpan Profil</button>
+        <button class="btn btn-ghost" onclick="toggleConfigPreview()">Preview config.json</button>
+        <button class="btn btn-ghost" onclick="copyConfigPreview()">Copy JSON</button>
+      </div>
+      <pre id="config-preview" class="log-box" style="display:none;margin-top:12px;border:1px solid var(--border);border-radius:10px;background:#06040d"></pre>
+    </div>
+
+    <div class="card">
+      <div class="card-title">
+        <span>Daftar Profil (<span id="prof-count">0</span>) <span class="jp-sub">設定一覧</span></span>
+        <div class="btn-row">
+          <button class="btn btn-ghost btn-sm" onclick="exportProfiles()">Export</button>
+          <button class="btn btn-ghost btn-sm" onclick="$('import-file').click()">Import</button>
+          <input type="file" id="import-file" accept=".json" style="display:none" onchange="importProfiles(this)">
+        </div>
+      </div>
+      <div id="prof-list" class="prof-list"></div>
+    </div>
+  </section>
+
+  <!-- TAB LOGS & SYSTEM -->
+  <section id="tab-system" class="tab-pane">
+    <div class="card">
+      <div class="card-title">
+        <span>Log Engine Xray <span class="jp-sub">システムログ</span></span>
+        <div class="btn-row">
+          <button class="btn btn-primary btn-sm" onclick="copyLogs()">Copy</button>
+          <button class="btn btn-ghost btn-sm" onclick="fetchLogs(true)">Refresh</button>
+          <button class="btn btn-red btn-sm" onclick="clearLogs()">Bersihkan</button>
+        </div>
+      </div>
+      <div class="row-check" style="margin-top:0">
+        <input type="checkbox" id="auto-log" checked>
+        <label for="auto-log">Auto-refresh setiap 3 detik</label>
+      </div>
+      <div class="term-wrap">
+        <div class="term-bar">
+          <span class="term-dot" style="background:#f43f5e"></span>
+          <span class="term-dot" style="background:#fbbf24"></span>
+          <span class="term-dot" style="background:#10b981"></span>
+          <span class="term-path">/tmp/xray.log</span>
+        </div>
+        <pre id="log-box" class="log-box">Memuat log...</pre>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span>Self-Update Panel (OTA) <span class="jp-sub">OTA更新</span></span></div>
+      <p style="font-size:.8rem;color:var(--muted);margin-bottom:11px">
+        Upload binary <code>b310-xray-panel</code> ARMv7 hasil kompilasi baru. Panel akan otomatis menimpa binary lama dan restart via <code>autorun.sh</code>.
+      </p>
+      <div class="field">
+        <input type="file" id="ota-file">
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="uploadOta()">Upload &amp; Update</button>
+      </div>
+      <div id="ota-bar" class="ota-bar"><div id="ota-fill" class="ota-fill"></div></div>
+      <div id="ota-status" style="font-size:.8rem;color:var(--muted);margin-top:8px"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span>Tentang Panel <span class="jp-sub">パネル概要</span></span></div>
+      <div class="about-list">
+        <div class="about-row"><span>Nama Panel</span><strong>Erlkim Xray Panel v0.1.0 (Anime Edition)</strong></div>
+        <div class="about-row"><span>Mode Sistem</span><strong id="about-mode">Huawei B310s-927 • ARMv7</strong></div>
+        <div class="about-row"><span>Tema UI</span><strong style="color:var(--sakura)">Cyberpunk Sakura Anime</strong></div>
+        <div class="about-row"><span>Protokol Didukung</span><strong>VLESS • VMess • Trojan</strong></div>
+        <div class="about-row"><span>Arsitektur</span><strong>Rust Static + Vanilla SPA (Zero-CDN)</strong></div>
+        <div class="about-row"><span>Fitur Keamanan</span><strong>Anti-Loop NAT • Watchdog 30s • OTA</strong></div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<nav class="tabs">
+  <button class="active" data-tab="home" onclick="switchTab('home',this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 10.5L12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>
+    Home
+  </button>
+  <button data-tab="profiles" onclick="switchTab('profiles',this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
+    Profiles
+  </button>
+  <button data-tab="system" onclick="switchTab('system',this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l-.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+    Logs &amp; Sys
+  </button>
+</nav>
+
+<script>
+const $ = id => document.getElementById(id);
+let state = { active_id: null, profiles: [] };
+let currentRunning = false;
+let currentPlatform = 'linux';
+let currentTab = 'home';
+
+function toast(msg, ms = 2800) {
+  const t = $('toast');
+  t.textContent = msg;
+  t.style.display = 'block';
+  clearTimeout(t._tm);
+  t._tm = setTimeout(() => { t.style.display = 'none'; }, ms);
+}
+
+function switchTab(tab, btn) {
+  currentTab = tab;
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('nav.tabs button').forEach(b => b.classList.remove('active'));
+  $('tab-' + tab).classList.add('active');
+  btn.classList.add('active');
+  if (tab === 'system') fetchLogs();
+}
+
+function fmtTime(sec) {
+  sec = Math.max(0, Number(sec) || 0);
+  const d = Math.floor(sec / 86400), h = Math.floor((sec % 86400) / 3600), m = Math.floor((sec % 3600) / 60);
+  if (d > 0) return `${d}h ${h}j`;
+  if (h > 0) return `${h}j ${m}m`;
+  return `${m}m ${sec % 60}d`;
+}
+
+function decodeBase64Utf8(str) {
+  let b64 = str.trim().replace(/-/g, '+').replace(/_/g, '/');
+  while (b64.length % 4) b64 += '=';
+  const bin = atob(b64);
+  const bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  return new TextDecoder().decode(bytes);
+}
+
+function parseUri(raw) {
+  const uri = raw.trim();
+  if (!uri) throw new Error('URI kosong');
+
+  if (uri.startsWith('vmess://')) {
+    const obj = JSON.parse(decodeBase64Utf8(uri.slice(8)));
+    const port = parseInt(obj.port, 10) || 443;
+    const tls = String(obj.tls || '').toLowerCase() === 'tls';
+    return {
+      id: 'prof_' + Date.now(),
+      name: obj.ps || obj.add || 'VMess',
+      protocol: 'vmess',
+      address: obj.add || '',
+      server_ip: obj.add || '',
+      port,
+      uuid: obj.id || '',
+      alter_id: parseInt(obj.aid, 10) || 0,
+      network: obj.net || 'tcp',
+      tls,
+      sni: obj.sni || obj.host || '',
+      host: obj.host || '',
+      path: obj.path || '/'
+    };
+  }
+
+  if (uri.startsWith('vless://') || uri.startsWith('trojan://')) {
+    const proto = uri.startsWith('vless://') ? 'vless' : 'trojan';
+    const fake = 'http://' + uri.slice(proto.length + 3);
+    const u = new URL(fake);
+    const q = u.searchParams;
+    const sec = (q.get('security') || (proto === 'trojan' ? 'tls' : 'none')).toLowerCase();
+    return {
+      id: 'prof_' + Date.now(),
+      name: u.hash ? decodeURIComponent(u.hash.slice(1)) : (u.hostname || proto.toUpperCase()),
+      protocol: proto,
+      address: u.hostname || '',
+      server_ip: u.hostname || '',
+      port: parseInt(u.port, 10) || 443,
+      uuid: decodeURIComponent(u.username || ''),
+      alter_id: 0,
+      network: (q.get('type') || 'tcp').toLowerCase(),
+      tls: sec === 'tls' || sec === 'reality',
+      sni: q.get('sni') || '',
+      host: q.get('host') || '',
+      path: q.get('path') || q.get('serviceName') || '/',
+      encryption: q.get('encryption') || 'none',
+      flow: q.get('flow') || ''
+    };
+  }
+
+  throw new Error('Format harus diawali vless://, vmess://, atau trojan://');
+}
+
+function readForm() {
+  const addr = $('f-addr').value.trim();
+  const sip = $('f-server-ip').value.trim() || addr;
+  return {
+    id: $('f-id').value || ('prof_' + Date.now()),
+    name: $('f-name').value.trim() || addr || 'Unnamed',
+    protocol: $('f-proto').value,
+    address: addr,
+    server_ip: sip,
+    port: parseInt($('f-port').value, 10) || 443,
+    uuid: $('f-uuid').value.trim(),
+    network: $('f-net').value,
+    tls: $('f-tls').checked,
+    sni: $('f-sni').value.trim(),
+    host: $('f-host').value.trim(),
+    path: $('f-path').value.trim() || '/'
+  };
+}
+
+function fillForm(p) {
+  $('f-id').value = p.id || '';
+  $('f-name').value = p.name || '';
+  $('f-proto').value = p.protocol || 'vless';
+  $('f-addr').value = p.address || '';
+  $('f-server-ip').value = p.server_ip || p.address || '';
+  $('f-port').value = p.port || 443;
+  $('f-uuid').value = p.uuid || '';
+  $('f-net').value = p.network || 'ws';
+  $('f-path').value = p.path || '/';
+  $('f-sni').value = p.sni || '';
+  $('f-host').value = p.host || '';
+  $('f-tls').checked = !!p.tls;
+  $('form-mode-title').textContent = p.id ? 'Edit Profil' : 'Editor Profil';
+}
+
+function resetForm() {
+  fillForm({ protocol: 'vless', port: 443, network: 'ws', path: '/', tls: true });
+  $('f-id').value = '';
+  $('form-mode-title').textContent = 'Editor Profil';
+}
+
+function parseAndFill() {
+  try {
+    const p = parseUri($('uri-input').value);
+    p.id = '';
+    fillForm(p);
+    toast('URI berhasil di-parse ke form');
+  } catch (e) { toast('Gagal parse: ' + e.message); }
+}
+
+async function parseAndSave() {
+  try {
+    const p = parseUri($('uri-input').value);
+    state.profiles.push(p);
+    if (!state.active_id) state.active_id = p.id;
+    await persistProfiles();
+    $('uri-input').value = '';
+    renderProfiles();
+    toast('Profil disimpan: ' + p.name);
+  } catch (e) { toast('Gagal: ' + e.message); }
+}
+
+async function saveFormProfile() {
+  const p = readForm();
+  if (!p.address || !p.uuid) return toast('Address & UUID/Password wajib diisi');
+  const idx = state.profiles.findIndex(x => x.id === p.id);
+  if (idx >= 0) state.profiles[idx] = { ...state.profiles[idx], ...p };
+  else state.profiles.push(p);
+  if (!state.active_id) state.active_id = p.id;
+  await persistProfiles();
+  resetForm();
+  renderProfiles();
+  toast('Profil tersimpan');
+}
+
+function buildXrayConfig(p) {
+  let settings;
+  if (p.protocol === 'trojan') {
+    settings = { servers: [{ address: p.address, port: Number(p.port), password: p.uuid }] };
+  } else if (p.protocol === 'vmess') {
+    settings = {
+      vnext: [{
+        address: p.address, port: Number(p.port),
+        users: [{ id: p.uuid, alterId: Number(p.alter_id || 0), security: 'auto' }]
+      }]
+    };
+  } else {
+    const user = { id: p.uuid, encryption: p.encryption || 'none' };
+    if (p.flow) user.flow = p.flow;
+    settings = { vnext: [{ address: p.address, port: Number(p.port), users: [user] }] };
+  }
+
+  const stream = { network: p.network || 'tcp', security: p.tls ? 'tls' : 'none' };
+  if (p.tls) {
+    const sni = p.sni || p.host || p.address;
+    stream.tlsSettings = { serverName: sni };
+    if (p.host && sni !== p.host) {
+      stream.tlsSettings.verifyPeerCertByName = p.host;
+    }
+  }
+  if (p.network === 'ws') {
+    stream.wsSettings = { path: p.path || '/' };
+    if (p.host) stream.wsSettings.headers = { Host: p.host };
+  } else if (p.network === 'grpc') {
+    stream.grpcSettings = { serviceName: p.path || '' };
+  }
+
+  const inbounds = currentPlatform === 'windows'
+    ? [
+        {
+          tag: 'socks-in', listen: '127.0.0.1', port: 10808, protocol: 'socks',
+          settings: { auth: 'noauth', udp: true },
+          sniffing: { enabled: true, destOverride: ['http', 'tls'] }
+        },
+        {
+          tag: 'http-in', listen: '127.0.0.1', port: 10809, protocol: 'http',
+          sniffing: { enabled: true, destOverride: ['http', 'tls'] }
+        }
+      ]
+    : [
+        {
+          tag: 'transparent-tcp', port: 12345, protocol: 'dokodemo-door',
+          settings: { network: 'tcp', followRedirect: true },
+          sniffing: { enabled: true, destOverride: ['http', 'tls'] }
+        },
+        {
+          tag: 'transparent-dns', port: 12353, protocol: 'dokodemo-door',
+          settings: { address: '1.1.1.1', port: 53, network: 'tcp,udp' }
+        }
+      ];
+
+  const rules = currentPlatform === 'windows'
+    ? [{ type: 'field', inboundTag: ['socks-in', 'http-in'], outboundTag: 'proxy' }]
+    : [{ type: 'field', inboundTag: ['transparent-dns'], outboundTag: 'proxy' }];
+
+  return {
+    log: { loglevel: 'warning' },
+    inbounds,
+    outbounds: [
+      { tag: 'proxy', protocol: p.protocol, settings, streamSettings: stream },
+      { tag: 'direct', protocol: 'freedom' }
+    ],
+    routing: {
+      domainStrategy: 'AsIs',
+      rules
+    }
+  };
+}
+
+function toggleConfigPreview() {
+  const el = $('config-preview');
+  if (el.style.display === 'none') {
+    el.textContent = JSON.stringify(buildXrayConfig(readForm()), null, 2);
+    el.style.display = 'block';
+  } else {
+    el.style.display = 'none';
+  }
+}
+
+function copyText(txt, okMsg) {
+  if (navigator.clipboard && window.isSecureContext) {
+    return navigator.clipboard.writeText(txt).then(() => toast(okMsg)).catch(() => fallbackCopy(txt, okMsg));
+  }
+  fallbackCopy(txt, okMsg);
+}
+
+function fallbackCopy(txt, okMsg) {
+  try {
+    const ta = document.createElement('textarea');
+    ta.value = txt;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    toast(okMsg);
+  } catch {
+    toast('Gagal menyalin');
+  }
+}
+
+function copyConfigPreview() {
+  copyText(JSON.stringify(buildXrayConfig(readForm()), null, 2), 'Config JSON disalin');
+}
+
+function buildUri(p) {
+  if (p.protocol === 'vmess') {
+    const obj = {
+      v: '2', ps: p.name || '', add: p.address || '', port: String(p.port || 443),
+      id: p.uuid || '', aid: String(p.alter_id || 0), net: p.network || 'tcp',
+      type: 'none', host: p.host || '', path: p.path || '/',
+      tls: p.tls ? 'tls' : '', sni: p.sni || ''
+    };
+    return 'vmess://' + btoa(unescape(encodeURIComponent(JSON.stringify(obj))));
+  }
+  const q = new URLSearchParams();
+  q.set('type', p.network || 'tcp');
+  q.set('security', p.tls ? 'tls' : 'none');
+  if (p.sni) q.set('sni', p.sni);
+  if (p.host) q.set('host', p.host);
+  if (p.path) q.set('path', p.path);
+  return `${p.protocol}://${encodeURIComponent(p.uuid || '')}@${p.address}:${p.port}?${q.toString()}#${encodeURIComponent(p.name || 'Profile')}`;
+}
+
+function copyProfileUri(id) {
+  const p = state.profiles.find(x => x.id === id);
+  if (p) copyText(buildUri(p), 'URI akun disalin');
+}
+
+function exportProfiles() {
+  const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'erlkim-xray-profiles.json';
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+function importProfiles(input) {
+  const f = input.files[0];
+  if (!f) return;
+  const r = new FileReader();
+  r.onload = async () => {
+    try {
+      const parsed = JSON.parse(r.result);
+      if (!Array.isArray(parsed.profiles)) throw new Error('Format JSON tidak valid');
+      state = parsed;
+      await persistProfiles();
+      renderProfiles();
+      toast(`Berhasil import ${state.profiles.length} profil`);
+    } catch (e) { toast('Import gagal: ' + e.message); }
+    input.value = '';
+  };
+  r.readAsText(f);
+}
+
+async function persistProfiles() {
+  const r = await fetch('/api/profiles', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(state)
+  });
+  if (!r.ok) throw new Error('Gagal menyimpan profiles.json');
+}
+
+function getActiveProfile() {
+  return state.profiles.find(p => p.id === state.active_id) || state.profiles[0] || null;
+}
+
+function renderProfiles() {
+  $('prof-count').textContent = state.profiles.length;
+  const list = $('prof-list');
+  if (!state.profiles.length) {
+    list.innerHTML = '<div style="color:var(--muted);font-size:.82rem">Belum ada profil tersimpan.</div>';
+    updateHomeProfile();
+    return;
+  }
+  list.innerHTML = '';
+  state.profiles.forEach(p => {
+    const isAct = p.id === state.active_id;
+    const div = document.createElement('div');
+    div.className = 'prof-item' + (isAct ? ' active' : '');
+    div.innerHTML = `
+      <div class="prof-meta">
+        <strong><span class="proto-pill">${esc(p.protocol)}</span>${esc(p.name)}</strong>
+        <small>${esc(p.address)}:${p.port} • ${esc(p.network)}${p.tls ? '+TLS' : ''}${p.sni ? ' • SNI:' + esc(p.sni) : ''}</small>
+      </div>
+      <div class="btn-row" style="flex-shrink:0">
+        ${isAct ? '<span class="badge badge-on">AKTIF</span>' : `<button class="btn btn-green btn-sm" onclick="selectProfile('${p.id}')">Pilih</button>`}
+        <button class="btn btn-ghost btn-sm" onclick="copyProfileUri('${p.id}')">URI</button>
+        <button class="btn btn-ghost btn-sm" onclick="editProfile('${p.id}')">Edit</button>
+        <button class="btn btn-red btn-sm" onclick="deleteProfile('${p.id}')">Hapus</button>
+      </div>`;
+    list.appendChild(div);
+  });
+  updateHomeProfile();
+}
+
+function esc(s) {
+  return String(s || '').replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+}
+
+function updateHomeProfile() {
+  const p = getActiveProfile();
+  const sel = $('home-prof-select');
+  if (!state.profiles.length) {
+    sel.style.display = 'none';
+  } else {
+    sel.style.display = 'inline-block';
+    sel.innerHTML = state.profiles.map(x => `<option value="${esc(x.id)}" ${x.id === state.active_id ? 'selected' : ''}>${esc(x.name)} (${esc(x.protocol.toUpperCase())})</option>`).join('');
+  }
+  if (!p) {
+    $('home-prof-name').textContent = 'Belum ada profil aktif';
+    $('home-prof-sub').textContent = 'Tambahkan & pilih akun di tab Profiles';
+    return;
+  }
+  $('home-prof-name').textContent = `${p.name} (${p.protocol.toUpperCase()})`;
+  $('home-prof-sub').textContent = `${p.address}:${p.port} • SNI: ${p.sni || '-'} • Host: ${p.host || '-'}`;
+}
+
+async function quickSwitchProfile(id) {
+  await selectProfile(id);
+  if (currentRunning) toast('Profil diubah — tekan Disconnect lalu Connect untuk menerapkan', 3500);
+}
+
+async function selectProfile(id) {
+  state.active_id = id;
+  await persistProfiles();
+  renderProfiles();
+  toast('Profil aktif diubah');
+}
+
+function editProfile(id) {
+  const p = state.profiles.find(x => x.id === id);
+  if (p) { fillForm(p); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+}
+
+async function deleteProfile(id) {
+  state.profiles = state.profiles.filter(x => x.id !== id);
+  if (state.active_id === id) state.active_id = state.profiles[0]?.id || null;
+  await persistProfiles();
+  renderProfiles();
+  toast('Profil dihapus');
+}
+
+async function togglePower() {
+  const btn = $('btn-power');
+  btn.classList.add('busy');
+  try {
+    if (currentRunning) {
+      const r = await fetch('/api/power', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'stop' })
+      });
+      const d = await r.json();
+      if (!d.ok) throw new Error(d.error || 'Stop gagal');
+      toast('Xray dimatikan');
+    } else {
+      const p = getActiveProfile();
+      if (!p) throw new Error('Pilih atau buat profil dulu di tab Profiles');
+      const config = buildXrayConfig(p);
+      const r = await fetch('/api/power', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'start',
+          config,
+          server_ip: p.server_ip || p.address,
+          profile_name: p.name
+        })
+      });
+      const d = await r.json();
+      if (!d.ok) throw new Error(d.error || 'Gagal menjalankan Xray');
+      toast('Xray berjalan (PID ' + d.pid + ')');
+    }
+    await fetchStatus();
+  } catch (e) {
+    toast(e.message, 4500);
+  } finally {
+    btn.classList.remove('busy');
+  }
+}
+
+async function fetchStatus() {
+  try {
+    const r = await fetch('/api/status');
+    const d = await r.json();
+    currentRunning = !!d.running;
+    if (d.platform) currentPlatform = d.platform;
+    const modeLabel = currentPlatform === 'windows'
+      ? 'Windows Local Mode • SOCKS5 :10808 / HTTP :10809'
+      : 'Huawei B310s-927 • ARMv7';
+    $('hdr-sub').textContent = modeLabel;
+    if ($('about-mode')) $('about-mode').textContent = modeLabel;
+
+    const btn = $('btn-power'), badge = $('hdr-badge'), hero = $('hero-card');
+    if (currentRunning) {
+      btn.classList.add('on');
+      hero.classList.add('is-on');
+      $('power-label').textContent = 'DISCONNECT';
+      badge.className = 'badge badge-on';
+      badge.textContent = 'CONNECTED';
+    } else {
+      btn.classList.remove('on');
+      hero.classList.remove('is-on');
+      $('power-label').textContent = 'CONNECT';
+      badge.className = 'badge badge-off';
+      badge.textContent = 'DISCONNECTED';
+    }
+
+    const modeTag = currentPlatform === 'windows' ? 'WIN PROXY' : (d.iptables_ok ? 'NAT OK' : 'NAT ERR');
+    $('stat-pid').textContent = d.pid ? `${d.pid} / ${modeTag}` : 'Stopped';
+    $('stat-wd').textContent = d.watchdog_recoveries ?? 0;
+
+    const totMb = Math.round((d.mem_total_kb || 0) / 1024);
+    const availMb = Math.round((d.mem_available_kb || 0) / 1024);
+    const usedMb = Math.max(0, totMb - availMb);
+    const pct = totMb > 0 ? Math.round((usedMb / totMb) * 100) : 0;
+    $('stat-ram').textContent = `${availMb} / ${totMb} MB bebas`;
+    $('stat-ram-pct').textContent = `${pct}% terpakai`;
+    $('ram-fill').style.width = pct + '%';
+    $('ram-fill').style.background = pct > 85 ? 'var(--red)' : pct > 70 ? 'var(--amber)' : 'linear-gradient(90deg, #ec4899, #00f2fe)';
+    $('stat-uptime').textContent = `${fmtTime(d.system_uptime_secs)} / ${fmtTime(d.panel_uptime_secs)}`;
+    updateTraffic(Number(d.net_rx_bytes || 0), Number(d.net_tx_bytes || 0));
+  } catch (_) {}
+}
+
+let netPrev = null;
+let netBase = (() => {
+  try { return JSON.parse(localStorage.getItem('erlkim_net_base') || 'null'); } catch { return null; }
+})();
+
+function fmtBytes(b) {
+  b = Math.max(0, Number(b) || 0);
+  if (b >= 1073741824) return (b / 1073741824).toFixed(2) + ' GB';
+  if (b >= 1048576) return (b / 1048576).toFixed(2) + ' MB';
+  if (b >= 1024) return (b / 1024).toFixed(1) + ' KB';
+  return b + ' B';
+}
+
+function fmtSpeed(bps) {
+  bps = Math.max(0, Number(bps) || 0);
+  const bits = bps * 8;
+  if (bits >= 1000000) return (bits / 1000000).toFixed(2) + ' Mbps';
+  if (bps >= 1024) return (bps / 1024).toFixed(1) + ' KB/s';
+  return Math.round(bps) + ' B/s';
+}
+
+function updateTraffic(rx, tx) {
+  const now = performance.now();
+  if (!netBase || rx < netBase.rx || tx < netBase.tx) {
+    netBase = { rx, tx };
+    try { localStorage.setItem('erlkim_net_base', JSON.stringify(netBase)); } catch {}
+  }
+  $('dl-total').textContent = 'Sesi: ' + fmtBytes(rx - netBase.rx);
+  $('ul-total').textContent = 'Sesi: ' + fmtBytes(tx - netBase.tx);
+  $('net-raw-total').textContent = `Total Interface: ↓ ${fmtBytes(rx)} • ↑ ${fmtBytes(tx)}`;
+
+  if (netPrev && rx >= netPrev.rx && tx >= netPrev.tx) {
+    const dt = Math.max(0.5, (now - netPrev.t) / 1000);
+    const dlBps = (rx - netPrev.rx) / dt;
+    const ulBps = (tx - netPrev.tx) / dt;
+    $('dl-speed').textContent = fmtSpeed(dlBps);
+    $('ul-speed').textContent = fmtSpeed(ulBps);
+    $('dl-bar').style.width = Math.min(100, Math.round((dlBps / 6250000) * 100)) + '%';
+    $('ul-bar').style.width = Math.min(100, Math.round((ulBps / 2500000) * 100)) + '%';
+  }
+  netPrev = { rx, tx, t: now };
+}
+
+function resetTrafficSession() {
+  if (netPrev) {
+    netBase = { rx: netPrev.rx, tx: netPrev.tx };
+    try { localStorage.setItem('erlkim_net_base', JSON.stringify(netBase)); } catch {}
+    updateTraffic(netPrev.rx, netPrev.tx);
+  }
+  toast('Penghitung sesi trafik direset');
+}
+
+async function runPingTest() {
+  $('ping-panel').textContent = '...';
+  $('ping-net').textContent = '...';
+
+  try {
+    const t0 = performance.now();
+    await fetch('/api/ping?t=' + Date.now(), { cache: 'no-store' });
+    $('ping-panel').textContent = Math.round(performance.now() - t0) + ' ms';
+  } catch { $('ping-panel').textContent = 'ERR'; }
+
+  try {
+    const ctrl = new AbortController();
+    const tm = setTimeout(() => ctrl.abort(), 5000);
+    const t1 = performance.now();
+    await fetch('https://cp.cloudflare.com/generate_204?t=' + Date.now(), {
+      mode: 'no-cors', cache: 'no-store', signal: ctrl.signal
+    });
+    clearTimeout(tm);
+    $('ping-net').textContent = Math.round(performance.now() - t1) + ' ms';
+  } catch { $('ping-net').textContent = 'Timeout'; }
+}
+
+let lastLogText = null;
+async function fetchLogs(force = false) {
+  try {
+    const sel = window.getSelection && window.getSelection().toString();
+    if (!force && sel) return;
+    const r = await fetch('/api/logs');
+    const d = await r.json();
+    const nextText = d.logs || '(Log masih kosong)';
+    if (!force && nextText === lastLogText) return;
+    lastLogText = nextText;
+    const box = $('log-box');
+    box.textContent = nextText;
+    box.scrollTop = box.scrollHeight;
+  } catch {}
+}
+
+async function copyLogs() {
+  const txt = $('log-box').textContent || '';
+  if (!txt || txt === '(Log masih kosong)') return toast('Log masih kosong');
+  copyText(txt, 'Log berhasil disalin ke clipboard');
+}
+
+async function clearLogs() {
+  await fetch('/api/logs', { method: 'DELETE' });
+  lastLogText = null;
+  fetchLogs(true);
+  toast('Log dibersihkan');
+}
+
+function uploadOta() {
+  const file = $('ota-file').files[0];
+  if (!file) return toast('Pilih file binary terlebih dahulu');
+  const st = $('ota-status');
+  const bar = $('ota-bar'), fill = $('ota-fill');
+  bar.style.display = 'block';
+  fill.style.width = '0%';
+  const xhr = new XMLHttpRequest();
+  xhr.open('POST', '/api/update');
+  xhr.upload.onprogress = e => {
+    if (e.lengthComputable) {
+      const pct = Math.round((e.loaded / e.total) * 100);
+      fill.style.width = pct + '%';
+      st.textContent = `Mengunggah: ${pct}%`;
+    }
+  };
+  xhr.onload = () => {
+    try {
+      const d = JSON.parse(xhr.responseText);
+      if (d.ok) {
+        fill.style.width = '100%';
+        st.textContent = d.message + ' Memuat ulang halaman dalam 4 detik...';
+        setTimeout(() => location.reload(), 4000);
+      } else {
+        st.textContent = 'Gagal: ' + (d.error || xhr.status);
+      }
+    } catch { st.textContent = 'Respon tidak valid (' + xhr.status + ')'; }
+  };
+  xhr.onerror = () => { st.textContent = 'Koneksi terputus saat upload'; };
+  xhr.send(file);
+}
+
+async function init() {
+  try {
+    const r = await fetch('/api/profiles');
+    state = await r.json();
+    if (!Array.isArray(state.profiles)) state.profiles = [];
+    renderProfiles();
+  } catch {}
+  await fetchStatus();
+  setInterval(fetchStatus, 3000);
+  setInterval(() => {
+    if (currentTab === 'system' && $('auto-log').checked) fetchLogs();
+  }, 3000);
+}
+
+init();
+</script>
+</body>
+</html>

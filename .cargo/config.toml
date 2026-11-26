@@ -1,0 +1,6 @@
+[target.armv7-unknown-linux-musleabihf]
+linker = "rust-lld"
+rustflags = [
+    "-C", "link-self-contained=yes",
+    "-C", "target-feature=+crt-static,+vfp3d16,-d32,-neon",
+]
