@@ -21,4 +21,5 @@ config.json
 Thumbs.db
 .DS_Store
 /*.webp
+*.zip
 

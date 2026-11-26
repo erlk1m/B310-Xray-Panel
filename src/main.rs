@@ -1049,22 +1049,29 @@ fn handle_modem_signal() -> Response<std::io::Cursor<Vec<u8>>> {
         }
     }
 
+    let is_win = cfg!(windows);
     json_response(200, json!({
         "ok": true,
-        "platform": if cfg!(windows) { "windows" } else { "linux" },
-        "operator": "Telkomsel 4G",
-        "network_type": "LTE (Cat4)",
-        "band": "B3 (1800 MHz)",
-        "band_id": "B3",
-        "rsrp": -86,
-        "rsrq": -7,
-        "rssi": -62,
-        "sinr": 18,
-        "cell_id": "18274312",
-        "pci": "120",
-        "bars": 4,
-        "bandwidth": "20 MHz",
-        "is_mock": cfg!(windows)
+        "platform": if is_win { "windows" } else { "linux" },
+        "has_modem": false,
+        "operator": if is_win { "Mode Simulasi PC (Tanpa Modem LTE)" } else { "Modem HiLink Tidak Terdeteksi" },
+        "network_type": if is_win { "PC Local Dev" } else { "Offline" },
+        "band": "--",
+        "band_id": "--",
+        "rsrp": null,
+        "rsrq": null,
+        "rssi": null,
+        "sinr": null,
+        "cell_id": "--",
+        "pci": "--",
+        "bars": 0,
+        "bandwidth": "--",
+        "is_mock": is_win,
+        "message": if is_win {
+            "Berjalan di Windows tanpa modem Balong HiLink. Parameter sinyal nyata hanya aktif di router Huawei B310s."
+        } else {
+            "Layanan HiLink di 127.0.0.1:80 tidak merespon."
+        }
     }))
 }
 
@@ -1096,9 +1103,16 @@ fn handle_modem_band(req: &mut Request) -> Response<std::io::Cursor<Vec<u8>>> {
         let _ = post_hilink_api("/api/net/net-mode", &xml);
     }
 
+    let is_win = cfg!(windows);
+    let msg = if is_win {
+        format!("[Simulasi PC] Frekuensi band {} dipilih (pada router B310s dikirim ke modem HiLink /api/net/net-mode).", band)
+    } else {
+        format!("Band berhasil dikunci ke {}", band)
+    };
+
     json_response(200, json!({
         "ok": true,
-        "message": format!("Band berhasil dikunci ke {}", band),
+        "message": msg,
         "band": band
     }))
 }
@@ -1113,9 +1127,15 @@ fn handle_modem_change_ip() -> Response<std::io::Cursor<Vec<u8>>> {
         let _ = post_hilink_api("/api/dialup/mobile-dataswitch", on_xml);
     }
 
+    let msg = if cfg!(windows) {
+        "[Simulasi PC] Sinyal ganti IP diterima. Pada router B310s data seluler akan di-restart otomatis via HiLink."
+    } else {
+        "Data seluler di-restart. IP operator baru sedang dinegosiasikan."
+    };
+
     json_response(200, json!({
         "ok": true,
-        "message": "Data seluler di-restart. IP operator baru sedang dinegosiasikan."
+        "message": msg
     }))
 }
 
@@ -1163,10 +1183,18 @@ fn handle_modem_ussd(req: &mut Request) -> Response<std::io::Cursor<Vec<u8>>> {
         }
     }
 
+    let is_win = cfg!(windows);
+    let msg = if is_win {
+        format!("[Simulasi PC] Panggilan USSD '{}' dikirim. Balasan nyata akan membaca kartu SIM melalui Balong HiLink saat berjalan di router B310s.", code)
+    } else {
+        format!("Gagal menghubungi modem HiLink untuk USSD {}. Pastikan SIM card terpasang dan modem aktif.", code)
+    };
+
     json_response(200, json!({
         "ok": true,
         "code": code,
-        "response": format!("Sisa Pulsa Rp 25.000, Aktif s.d 28/12/2026. Kuota Utama 18.5 GB (Simulasi USSD {})", code)
+        "is_mock": is_win,
+        "response": msg
     }))
 }
 
@@ -1210,6 +1238,23 @@ fn extract_xml_tag(xml: &str, tag: &str) -> Option<String> {
 }
 
 #[cfg(target_os = "linux")]
+fn get_hilink_operator() -> String {
+    if let Ok(resp) = query_hilink_api("/api/net/current-plmn") {
+        if let Some(name) = extract_xml_tag(&resp, "FullName") {
+            if !name.trim().is_empty() {
+                return name.trim().to_string();
+            }
+        }
+        if let Some(short) = extract_xml_tag(&resp, "ShortName") {
+            if !short.trim().is_empty() {
+                return short.trim().to_string();
+            }
+        }
+    }
+    "4G LTE".to_string()
+}
+
+#[cfg(target_os = "linux")]
 fn parse_hilink_signal(xml: &str) -> Option<Value> {
     let pci = extract_xml_tag(xml, "pci").unwrap_or_else(|| "-".into());
     let cell_id = extract_xml_tag(xml, "cell_id").unwrap_or_else(|| "-".into());
@@ -1223,10 +1268,13 @@ fn parse_hilink_signal(xml: &str) -> Option<Value> {
     let rsrp_num = rsrp.trim_end_matches("dBm").trim().parse::<i32>().unwrap_or(-85);
     let bars = if rsrp_num >= -80 { 5 } else if rsrp_num >= -90 { 4 } else if rsrp_num >= -100 { 3 } else if rsrp_num >= -110 { 2 } else { 1 };
 
+    let op = get_hilink_operator();
+
     Some(json!({
         "ok": true,
         "platform": "linux",
-        "operator": "4G LTE",
+        "has_modem": true,
+        "operator": op,
         "network_type": "LTE (4G)",
         "band": format!("Band {} ({} MHz)", band_num, match band_num.as_str() { "1" => "2100", "8" => "900", "40" => "2300", _ => "1800" }),
         "band_id": format!("B{}", band_num),

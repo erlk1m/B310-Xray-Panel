@@ -573,50 +573,54 @@
         <span>Informasi Sinyal LTE <span class="jp-sub">電波状態</span></span>
         <button class="btn btn-ghost btn-sm" onclick="fetchModemSignal(true)">Refresh Sinyal</button>
       </div>
+
+      <div id="modem-sim-banner" style="display:none;padding:10px 14px;background:rgba(236,72,153,0.1);border:1px dashed var(--sakura);border-radius:10px;margin-bottom:12px;font-size:.78rem;color:var(--sakura-light);line-height:1.45">
+        💻 <strong>Mode Simulasi PC (Windows):</strong> Panel sedang berjalan di komputer lokal (tidak ada modem 4G Balong HiLink). Parameter sinyal nyata (RSRP, RSRQ, SINR, Frekuensi &amp; Operator SIM) akan terbaca secara otomatis dan dinamis dari kartu SIM saat binary dijalankan di Router Huawei B310s.
+      </div>
       
       <div style="display:flex;align-items:center;justify-content:space-between;padding:12px;background:var(--bg-card2);border:1px solid var(--border);border-radius:12px;margin-bottom:12px">
         <div style="display:flex;align-items:center;gap:14px">
           <div class="sig-meter">
-            <span id="sb-1" class="sig-bar b1 active"></span>
-            <span id="sb-2" class="sig-bar b2 active"></span>
-            <span id="sb-3" class="sig-bar b3 active"></span>
-            <span id="sb-4" class="sig-bar b4 active"></span>
+            <span id="sb-1" class="sig-bar b1"></span>
+            <span id="sb-2" class="sig-bar b2"></span>
+            <span id="sb-3" class="sig-bar b3"></span>
+            <span id="sb-4" class="sig-bar b4"></span>
             <span id="sb-5" class="sig-bar b5"></span>
           </div>
           <div>
-            <strong id="modem-op" style="font-size:1.02rem;color:#fff;display:block">Telkomsel 4G</strong>
-            <small id="modem-net" style="font-size:.74rem;color:var(--muted)">LTE Cat4 • Cell ID: <span id="modem-cell">18274312</span> • PCI: <span id="modem-pci">120</span></small>
+            <strong id="modem-op" style="font-size:1.02rem;color:#fff;display:block">Memeriksa status modem...</strong>
+            <small id="modem-net" style="font-size:.74rem;color:var(--muted)">Cell ID: <span id="modem-cell">--</span> • PCI: <span id="modem-pci">--</span></small>
           </div>
         </div>
-        <span id="modem-quality-badge" class="badge badge-on">EXCELLENT</span>
+        <span id="modem-quality-badge" class="badge badge-off">STANDBY</span>
       </div>
 
       <div class="stats">
         <div class="stat-box">
           <div class="stat-label">RSRP (Kekuatan Sinyal)</div>
-          <div id="modem-rsrp" class="stat-val dl-color">-86 dBm</div>
+          <div id="modem-rsrp" class="stat-val dl-color">-- dBm</div>
           <div class="speed-sub">Target: &gt; -95 dBm</div>
         </div>
         <div class="stat-box">
           <div class="stat-label">RSRQ (Kualitas Sinyal)</div>
-          <div id="modem-rsrq" class="stat-val ul-color">-7 dB</div>
+          <div id="modem-rsrq" class="stat-val ul-color">-- dB</div>
           <div class="speed-sub">Target: &gt; -10 dB</div>
         </div>
         <div class="stat-box">
           <div class="stat-label">RSSI (Total Sinyal)</div>
-          <div id="modem-rssi" class="stat-val">-62 dBm</div>
+          <div id="modem-rssi" class="stat-val">-- dBm</div>
           <div class="speed-sub">Kekuatan Carrier</div>
         </div>
         <div class="stat-box">
           <div class="stat-label">SINR (Noise / Kejernihan)</div>
-          <div id="modem-sinr" class="stat-val dl-color">18 dB</div>
+          <div id="modem-sinr" class="stat-val dl-color">-- dB</div>
           <div class="speed-sub">Semakin tinggi semakin baik</div>
         </div>
       </div>
 
       <div style="margin-top:10px;padding:9px 12px;background:var(--bg-card2);border:1px solid var(--border);border-radius:10px;display:flex;justify-content:space-between;align-items:center;font-size:.8rem">
         <span style="color:var(--muted)">Frekuensi Aktif</span>
-        <strong id="modem-band" style="color:var(--sakura)">B3 (1800 MHz) • 20 MHz</strong>
+        <strong id="modem-band" style="color:var(--sakura)">--</strong>
       </div>
 
       <div class="row-check" style="margin:10px 0 0">
@@ -1647,35 +1651,57 @@ async function fetchModemSignal(force = false) {
     const d = await r.json();
     if (!d.ok) return;
 
-    if ($('modem-op')) $('modem-op').textContent = d.operator || '4G LTE';
-    if ($('modem-net')) $('modem-net').innerHTML = `${d.network_type || 'LTE'} • Cell ID: <span id="modem-cell">${d.cell_id || '-'}</span> • PCI: <span id="modem-pci">${d.pci || '-'}</span>`;
-    if ($('modem-rsrp')) $('modem-rsrp').textContent = (d.rsrp != null ? d.rsrp : '--') + ' dBm';
-    if ($('modem-rsrq')) $('modem-rsrq').textContent = (d.rsrq != null ? d.rsrq : '--') + ' dB';
-    if ($('modem-rssi')) $('modem-rssi').textContent = (d.rssi != null ? d.rssi : '--') + ' dBm';
-    if ($('modem-sinr')) $('modem-sinr').textContent = (d.sinr != null ? d.sinr : '--') + ' dB';
-    if ($('modem-band')) $('modem-band').textContent = `${d.band || 'Auto'} • ${d.bandwidth || '20 MHz'}`;
+    if ($('modem-op')) $('modem-op').textContent = d.operator || '--';
+    if ($('modem-net')) $('modem-net').innerHTML = `${d.network_type || '-'} • Cell ID: <span id="modem-cell">${d.cell_id || '--'}</span> • PCI: <span id="modem-pci">${d.pci || '--'}</span>`;
+    if ($('modem-rsrp')) $('modem-rsrp').textContent = d.rsrp != null ? `${d.rsrp} dBm` : '-- dBm';
+    if ($('modem-rsrq')) $('modem-rsrq').textContent = d.rsrq != null ? `${d.rsrq} dB` : '-- dB';
+    if ($('modem-rssi')) $('modem-rssi').textContent = d.rssi != null ? `${d.rssi} dBm` : '-- dBm';
+    if ($('modem-sinr')) $('modem-sinr').textContent = d.sinr != null ? `${d.sinr} dB` : '-- dB';
+    if ($('modem-band')) $('modem-band').textContent = (d.band && d.band !== '--') ? `${d.band} • ${d.bandwidth || '20 MHz'}` : '--';
 
-    const bars = Math.max(1, Math.min(5, Number(d.bars) || 3));
+    const simBanner = $('modem-sim-banner');
+    if (simBanner) {
+      simBanner.style.display = (d.is_mock || d.has_modem === false) ? 'block' : 'none';
+      if (!d.is_mock && d.has_modem === false) {
+        simBanner.innerHTML = '⚠️ <strong>Modem HiLink Tidak Terdeteksi:</strong> Layanan modem internal di port 80 tidak merespon atau router belum tersambung ke jaringan seluler.';
+      }
+    }
+
+    const bars = Math.max(0, Math.min(5, Number(d.bars) || 0));
     for (let i = 1; i <= 5; i++) {
       const b = $('sb-' + i);
       if (b) {
-        if (i <= bars) b.classList.add('active');
+        if (bars > 0 && i <= bars) b.classList.add('active');
         else b.classList.remove('active');
       }
     }
 
     const qBadge = $('modem-quality-badge');
     if (qBadge) {
-      if (bars >= 4) {
+      if (d.is_mock) {
+        qBadge.className = 'badge badge-off';
+        qBadge.style.color = '#e2e8f0';
+        qBadge.textContent = 'SIMULASI PC';
+      } else if (d.has_modem === false) {
+        qBadge.className = 'badge badge-off';
+        qBadge.style.color = '';
+        qBadge.textContent = 'NO MODEM';
+      } else if (bars >= 4) {
         qBadge.className = 'badge badge-on';
+        qBadge.style.color = '';
         qBadge.textContent = 'EXCELLENT';
       } else if (bars === 3) {
         qBadge.className = 'badge badge-on';
         qBadge.style.color = '#38bdf8';
         qBadge.textContent = 'GOOD';
+      } else if (bars >= 1) {
+        qBadge.className = 'badge badge-off';
+        qBadge.style.color = '#f59e0b';
+        qBadge.textContent = 'WEAK';
       } else {
         qBadge.className = 'badge badge-off';
-        qBadge.textContent = 'POOR';
+        qBadge.style.color = '';
+        qBadge.textContent = 'NO SIGNAL';
       }
     }
   } catch (_) {}
