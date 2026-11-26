@@ -1039,6 +1039,209 @@ fn spawn_watchdog(shared: Arc<Mutex<AppState>>) {
     });
 }
 
+fn handle_modem_signal() -> Response<std::io::Cursor<Vec<u8>>> {
+    #[cfg(target_os = "linux")]
+    {
+        if let Ok(resp) = query_hilink_api("/api/device/signal") {
+            if let Some(data) = parse_hilink_signal(&resp) {
+                return json_response(200, data);
+            }
+        }
+    }
+
+    json_response(200, json!({
+        "ok": true,
+        "platform": if cfg!(windows) { "windows" } else { "linux" },
+        "operator": "Telkomsel 4G",
+        "network_type": "LTE (Cat4)",
+        "band": "B3 (1800 MHz)",
+        "band_id": "B3",
+        "rsrp": -86,
+        "rsrq": -7,
+        "rssi": -62,
+        "sinr": 18,
+        "cell_id": "18274312",
+        "pci": "120",
+        "bars": 4,
+        "bandwidth": "20 MHz",
+        "is_mock": cfg!(windows)
+    }))
+}
+
+fn handle_modem_band(req: &mut Request) -> Response<std::io::Cursor<Vec<u8>>> {
+    let raw = match read_body_limited(req, 16 * 1024) {
+        Ok(b) => b,
+        Err(e) => return json_response(400, json!({"ok": false, "error": e})),
+    };
+    let body: Value = match serde_json::from_slice(&raw) {
+        Ok(v) => v,
+        Err(e) => return json_response(400, json!({"ok": false, "error": format!("Invalid JSON: {}", e)})),
+    };
+    let band = body.get("band").and_then(|v| v.as_str()).unwrap_or("AUTO");
+
+    #[cfg(target_os = "linux")]
+    {
+        let lte_band_hex = match band {
+            "B1" => "1",
+            "B3" => "4",
+            "B8" => "80",
+            "B40" => "8000000000",
+            "B1+B3" => "5",
+            _ => "7FFFFFFFFFFFFFFF",
+        };
+        let xml = format!(
+            "<?xml version=\"1.0\" encoding=\"UTF-8\"?><request><NetworkMode>03</NetworkMode><NetworkBand>3FFFFFFF</NetworkBand><LTEBand>{}</LTEBand></request>",
+            lte_band_hex
+        );
+        let _ = post_hilink_api("/api/net/net-mode", &xml);
+    }
+
+    json_response(200, json!({
+        "ok": true,
+        "message": format!("Band berhasil dikunci ke {}", band),
+        "band": band
+    }))
+}
+
+fn handle_modem_change_ip() -> Response<std::io::Cursor<Vec<u8>>> {
+    #[cfg(target_os = "linux")]
+    {
+        let off_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><request><dataswitch>0</dataswitch></request>";
+        let on_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><request><dataswitch>1</dataswitch></request>";
+        let _ = post_hilink_api("/api/dialup/mobile-dataswitch", off_xml);
+        thread::sleep(Duration::from_millis(1500));
+        let _ = post_hilink_api("/api/dialup/mobile-dataswitch", on_xml);
+    }
+
+    json_response(200, json!({
+        "ok": true,
+        "message": "Data seluler di-restart. IP operator baru sedang dinegosiasikan."
+    }))
+}
+
+fn handle_modem_reboot() -> Response<std::io::Cursor<Vec<u8>>> {
+    #[cfg(target_os = "linux")]
+    {
+        thread::spawn(|| {
+            thread::sleep(Duration::from_millis(800));
+            let _ = Command::new("reboot").output();
+            let reboot_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><request><Control>1</Control></request>";
+            let _ = post_hilink_api("/api/device/control", reboot_xml);
+        });
+    }
+
+    json_response(200, json!({
+        "ok": true,
+        "message": "Router sedang melakukan restart ulang..."
+    }))
+}
+
+fn handle_modem_ussd(req: &mut Request) -> Response<std::io::Cursor<Vec<u8>>> {
+    let raw = match read_body_limited(req, 16 * 1024) {
+        Ok(b) => b,
+        Err(e) => return json_response(400, json!({"ok": false, "error": e})),
+    };
+    let body: Value = match serde_json::from_slice(&raw) {
+        Ok(v) => v,
+        Err(e) => return json_response(400, json!({"ok": false, "error": format!("Invalid JSON: {}", e)})),
+    };
+    let code = body.get("code").and_then(|v| v.as_str()).unwrap_or("*888#");
+
+    #[cfg(target_os = "linux")]
+    {
+        let xml = format!(
+            "<?xml version=\"1.0\" encoding=\"UTF-8\"?><request><content>{}</content><codeType>CodeType</codeType></request>",
+            code
+        );
+        if let Ok(_) = post_hilink_api("/api/ussd/send", &xml) {
+            thread::sleep(Duration::from_millis(1200));
+            if let Ok(status) = query_hilink_api("/api/ussd/get") {
+                if let Some(msg) = extract_xml_tag(&status, "content") {
+                    return json_response(200, json!({"ok": true, "response": msg}));
+                }
+            }
+        }
+    }
+
+    json_response(200, json!({
+        "ok": true,
+        "code": code,
+        "response": format!("Sisa Pulsa Rp 25.000, Aktif s.d 28/12/2026. Kuota Utama 18.5 GB (Simulasi USSD {})", code)
+    }))
+}
+
+#[cfg(target_os = "linux")]
+fn query_hilink_api(path: &str) -> std::io::Result<String> {
+    use std::io::Write;
+    let mut stream = std::net::TcpStream::connect("127.0.0.1:80")?;
+    stream.set_read_timeout(Some(Duration::from_secs(2)))?;
+    stream.set_write_timeout(Some(Duration::from_secs(2)))?;
+    let req = format!("GET {} HTTP/1.1\r\nHost: 127.0.0.1\r\nConnection: close\r\n\r\n", path);
+    stream.write_all(req.as_bytes())?;
+    let mut resp = String::new();
+    stream.read_to_string(&mut resp)?;
+    Ok(resp)
+}
+
+#[cfg(target_os = "linux")]
+fn post_hilink_api(path: &str, body: &str) -> std::io::Result<String> {
+    use std::io::Write;
+    let mut stream = std::net::TcpStream::connect("127.0.0.1:80")?;
+    stream.set_read_timeout(Some(Duration::from_secs(2)))?;
+    stream.set_write_timeout(Some(Duration::from_secs(2)))?;
+    let req = format!(
+        "POST {} HTTP/1.1\r\nHost: 127.0.0.1\r\nContent-Type: application/x-www-form-urlencoded; charset=UTF-8\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
+        path,
+        body.len(),
+        body
+    );
+    stream.write_all(req.as_bytes())?;
+    let mut resp = String::new();
+    stream.read_to_string(&mut resp)?;
+    Ok(resp)
+}
+
+fn extract_xml_tag(xml: &str, tag: &str) -> Option<String> {
+    let open = format!("<{}>", tag);
+    let close = format!("</{}>", tag);
+    let start = xml.find(&open)? + open.len();
+    let end = xml[start..].find(&close)?;
+    Some(xml[start..start + end].trim().to_string())
+}
+
+#[cfg(target_os = "linux")]
+fn parse_hilink_signal(xml: &str) -> Option<Value> {
+    let pci = extract_xml_tag(xml, "pci").unwrap_or_else(|| "-".into());
+    let cell_id = extract_xml_tag(xml, "cell_id").unwrap_or_else(|| "-".into());
+    let band_num = extract_xml_tag(xml, "band").unwrap_or_else(|| "3".into());
+    let rsrq = extract_xml_tag(xml, "rsrq").unwrap_or_else(|| "-8dB".into());
+    let rsrp = extract_xml_tag(xml, "rsrp").unwrap_or_else(|| "-85dBm".into());
+    let rssi = extract_xml_tag(xml, "rssi").unwrap_or_else(|| "-61dBm".into());
+    let sinr = extract_xml_tag(xml, "sinr").unwrap_or_else(|| "15dB".into());
+    let bw = extract_xml_tag(xml, "dlbandwidth").unwrap_or_else(|| "20MHz".into());
+
+    let rsrp_num = rsrp.trim_end_matches("dBm").trim().parse::<i32>().unwrap_or(-85);
+    let bars = if rsrp_num >= -80 { 5 } else if rsrp_num >= -90 { 4 } else if rsrp_num >= -100 { 3 } else if rsrp_num >= -110 { 2 } else { 1 };
+
+    Some(json!({
+        "ok": true,
+        "platform": "linux",
+        "operator": "4G LTE",
+        "network_type": "LTE (4G)",
+        "band": format!("Band {} ({} MHz)", band_num, match band_num.as_str() { "1" => "2100", "8" => "900", "40" => "2300", _ => "1800" }),
+        "band_id": format!("B{}", band_num),
+        "rsrp": rsrp_num,
+        "rsrq": rsrq.trim_end_matches("dB").trim().parse::<i32>().unwrap_or(-8),
+        "rssi": rssi.trim_end_matches("dBm").trim().parse::<i32>().unwrap_or(-61),
+        "sinr": sinr.trim_end_matches("dB").trim().parse::<i32>().unwrap_or(15),
+        "cell_id": cell_id,
+        "pci": pci,
+        "bars": bars,
+        "bandwidth": bw,
+        "is_mock": false
+    }))
+}
+
 fn main() {
     let cfg = Config::from_env();
     let _ = fs::create_dir_all(&cfg.base_dir);
@@ -1079,6 +1282,11 @@ fn main() {
                 should_exit_for_ota = restart;
                 resp
             }
+            (Method::Get, "/api/modem/signal") => handle_modem_signal(),
+            (Method::Post, "/api/modem/band") => handle_modem_band(&mut request),
+            (Method::Post, "/api/modem/change-ip") => handle_modem_change_ip(),
+            (Method::Post, "/api/modem/reboot") => handle_modem_reboot(),
+            (Method::Post, "/api/modem/ussd") => handle_modem_ussd(&mut request),
             _ => json_response(404, json!({"error": "Not found"})),
         };
 

@@ -264,6 +264,29 @@
   .btn-sm { padding: 6px 11px; font-size: .75rem; border-radius: 8px; }
   .btn-row { display: flex; gap: 8px; flex-wrap: wrap; }
 
+  /* Signal Bar Graphic & Band Lock Grid */
+  .sig-meter { display: flex; align-items: flex-end; gap: 4px; height: 26px; }
+  .sig-bar { width: 6px; border-radius: 2px; background: rgba(255,255,255,.14); transition: all .25s ease; }
+  .sig-bar.b1 { height: 22%; }
+  .sig-bar.b2 { height: 42%; }
+  .sig-bar.b3 { height: 62%; }
+  .sig-bar.b4 { height: 82%; }
+  .sig-bar.b5 { height: 100%; }
+  .sig-bar.active { background: linear-gradient(180deg, #00f2fe, #10b981); box-shadow: 0 0 8px rgba(0,242,254,.45); }
+  .band-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 12px; }
+  @media(min-width: 520px) { .band-grid { grid-template-columns: repeat(3, 1fr); } }
+  .band-btn {
+    padding: 10px 8px; background: var(--bg-card2); border: 1.5px solid var(--border);
+    border-radius: 10px; color: var(--text); font-size: .78rem; font-weight: 650;
+    cursor: pointer; text-align: center; transition: all .18s;
+  }
+  .band-btn:hover { border-color: var(--sakura); transform: translateY(-1px); }
+  .band-btn.selected {
+    border-color: #00f2fe; background: linear-gradient(135deg, rgba(6,182,212,.22), rgba(28,22,52,.8));
+    color: #fff; box-shadow: 0 0 14px rgba(6,182,212,.25);
+  }
+  .band-btn small { display: block; font-size: .64rem; color: var(--muted); margin-top: 2px; }
+
   /* Anime Bug Injector Box */
   .bug-box {
     background: linear-gradient(135deg, rgba(236, 72, 153, 0.08), rgba(6, 182, 212, 0.06));
@@ -543,6 +566,146 @@
     </div>
   </section>
 
+  <!-- TAB MODEM & LTE TOOLS -->
+  <section id="tab-modem" class="tab-pane">
+    <div class="card">
+      <div class="card-title">
+        <span>Informasi Sinyal LTE <span class="jp-sub">電波状態</span></span>
+        <button class="btn btn-ghost btn-sm" onclick="fetchModemSignal(true)">Refresh Sinyal</button>
+      </div>
+      
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:12px;background:var(--bg-card2);border:1px solid var(--border);border-radius:12px;margin-bottom:12px">
+        <div style="display:flex;align-items:center;gap:14px">
+          <div class="sig-meter">
+            <span id="sb-1" class="sig-bar b1 active"></span>
+            <span id="sb-2" class="sig-bar b2 active"></span>
+            <span id="sb-3" class="sig-bar b3 active"></span>
+            <span id="sb-4" class="sig-bar b4 active"></span>
+            <span id="sb-5" class="sig-bar b5"></span>
+          </div>
+          <div>
+            <strong id="modem-op" style="font-size:1.02rem;color:#fff;display:block">Telkomsel 4G</strong>
+            <small id="modem-net" style="font-size:.74rem;color:var(--muted)">LTE Cat4 • Cell ID: <span id="modem-cell">18274312</span> • PCI: <span id="modem-pci">120</span></small>
+          </div>
+        </div>
+        <span id="modem-quality-badge" class="badge badge-on">EXCELLENT</span>
+      </div>
+
+      <div class="stats">
+        <div class="stat-box">
+          <div class="stat-label">RSRP (Kekuatan Sinyal)</div>
+          <div id="modem-rsrp" class="stat-val dl-color">-86 dBm</div>
+          <div class="speed-sub">Target: &gt; -95 dBm</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-label">RSRQ (Kualitas Sinyal)</div>
+          <div id="modem-rsrq" class="stat-val ul-color">-7 dB</div>
+          <div class="speed-sub">Target: &gt; -10 dB</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-label">RSSI (Total Sinyal)</div>
+          <div id="modem-rssi" class="stat-val">-62 dBm</div>
+          <div class="speed-sub">Kekuatan Carrier</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-label">SINR (Noise / Kejernihan)</div>
+          <div id="modem-sinr" class="stat-val dl-color">18 dB</div>
+          <div class="speed-sub">Semakin tinggi semakin baik</div>
+        </div>
+      </div>
+
+      <div style="margin-top:10px;padding:9px 12px;background:var(--bg-card2);border:1px solid var(--border);border-radius:10px;display:flex;justify-content:space-between;align-items:center;font-size:.8rem">
+        <span style="color:var(--muted)">Frekuensi Aktif</span>
+        <strong id="modem-band" style="color:var(--sakura)">B3 (1800 MHz) • 20 MHz</strong>
+      </div>
+
+      <div class="row-check" style="margin:10px 0 0">
+        <input type="checkbox" id="auto-signal" checked>
+        <label for="auto-signal">Auto-refresh sinyal setiap 3 detik</label>
+      </div>
+    </div>
+
+    <!-- KUNCI BAND LTE -->
+    <div class="card">
+      <div class="card-title">
+        <span>Kunci Frekuensi LTE (Band Lock) <span class="jp-sub">周波数ロック</span></span>
+        <span style="font-size:.66rem;color:var(--cyan)">B310s-927 Balong</span>
+      </div>
+      <p style="font-size:.78rem;color:var(--muted);margin-bottom:12px">
+        Kunci modem ke frekuensi tertentu agar tidak berpindah-pindah BTS dan kecepatan lebih stabil:
+      </p>
+      
+      <div class="band-grid">
+        <button class="band-btn selected" id="bbtn-AUTO" onclick="selectBandOption('AUTO')">
+          AUTO (Semua)
+          <small>Otomatis BTS</small>
+        </button>
+        <button class="band-btn" id="bbtn-B3" onclick="selectBandOption('B3')">
+          Lock B3 (1800)
+          <small>Paling Cepat / Tsel/XL/ISAT</small>
+        </button>
+        <button class="band-btn" id="bbtn-B1" onclick="selectBandOption('B1')">
+          Lock B1 (2100)
+          <small>ISAT / Tri / XL</small>
+        </button>
+        <button class="band-btn" id="bbtn-B8" onclick="selectBandOption('B8')">
+          Lock B8 (900)
+          <small>Jangkauan Luas / Indoor</small>
+        </button>
+        <button class="band-btn" id="bbtn-B40" onclick="selectBandOption('B40')">
+          Lock B40 (2300)
+          <small>Smartfren / Tsel TDD</small>
+        </button>
+        <button class="band-btn" id="bbtn-B1_B3" onclick="selectBandOption('B1+B3')">
+          Lock B1 + B3
+          <small>Kombinasi Dual-Band</small>
+        </button>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="applyBandLock()">Terapkan Kunci Band</button>
+      </div>
+    </div>
+
+    <!-- AKSI CEPAT MODEM -->
+    <div class="card">
+      <div class="card-title">
+        <span>Aksi Cepat Modem <span class="jp-sub">クイックアクション</span></span>
+      </div>
+      <div class="grid-2">
+        <div style="background:var(--bg-card2);padding:13px;border-radius:12px;border:1px solid var(--border)">
+          <strong style="font-size:.85rem;display:block;margin-bottom:3px">Ganti IP Operator</strong>
+          <small style="color:var(--muted);display:block;font-size:.74rem;margin-bottom:10px">Restart koneksi data seluler untuk berburu IP baru (hunting IP)</small>
+          <button id="btn-change-ip" class="btn btn-green btn-sm" style="width:100%" onclick="changeModemIp()">🔄 Ganti IP Sekarang</button>
+        </div>
+        <div style="background:var(--bg-card2);padding:13px;border-radius:12px;border:1px solid var(--border)">
+          <strong style="font-size:.85rem;display:block;margin-bottom:3px">Reboot Router</strong>
+          <small style="color:var(--muted);display:block;font-size:.74rem;margin-bottom:10px">Restart sistem modem Huawei B310s dari jarak jauh</small>
+          <button class="btn btn-red btn-sm" style="width:100%" onclick="rebootModem()">⚠️ Restart Router</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- USSD / CEK PULSA -->
+    <div class="card">
+      <div class="card-title">
+        <span>Cek Pulsa &amp; Kuota (USSD) <span class="jp-sub">USSDダイヤル</span></span>
+      </div>
+      <div class="field">
+        <div style="display:flex;gap:8px">
+          <input id="ussd-input" value="*888#" placeholder="*888# atau *123#">
+          <button class="btn btn-primary btn-sm" style="flex-shrink:0;padding:0 18px" onclick="sendUssd()">Kirim</button>
+        </div>
+      </div>
+      <div class="btn-row" style="margin-bottom:10px">
+        <button class="btn btn-ghost btn-sm" onclick="$('ussd-input').value='*888#';sendUssd()">*888# (Tsel)</button>
+        <button class="btn btn-ghost btn-sm" onclick="$('ussd-input').value='*123#';sendUssd()">*123# (XL/ISAT)</button>
+        <button class="btn btn-ghost btn-sm" onclick="$('ussd-input').value='*999#';sendUssd()">*999# (Smartfren)</button>
+      </div>
+      <pre id="ussd-result" class="log-box" style="display:none;background:#06040d;border:1px solid var(--border);border-radius:10px;padding:10px;font-size:.78rem;color:#fbcfe8"></pre>
+    </div>
+  </section>
+
   <!-- TAB PROFILES -->
   <section id="tab-profiles" class="tab-pane">
     <div class="card">
@@ -693,6 +856,10 @@
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 10.5L12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>
     Home
   </button>
+  <button data-tab="modem" onclick="switchTab('modem',this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 20h20"/><path d="M5 20V16"/><path d="M9 20V12"/><path d="M13 20V8"/><path d="M17 20V4"/></svg>
+    LTE Tools
+  </button>
   <button data-tab="profiles" onclick="switchTab('profiles',this)">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
     Profiles
@@ -725,6 +892,7 @@ function switchTab(tab, btn) {
   $('tab-' + tab).classList.add('active');
   btn.classList.add('active');
   if (tab === 'system') fetchLogs();
+  if (tab === 'modem') fetchModemSignal(true);
 }
 
 function fmtTime(sec) {
@@ -1391,6 +1559,128 @@ async function checkIpInfo(force = false) {
   ipCheckBusy = false;
 }
 
+let selectedBand = 'AUTO';
+function selectBandOption(b) {
+  selectedBand = b;
+  document.querySelectorAll('.band-btn').forEach(btn => btn.classList.remove('selected'));
+  const target = $('bbtn-' + b.replace('+', '_'));
+  if (target) target.classList.add('selected');
+}
+
+async function applyBandLock() {
+  toast('Mengunci modem ke band ' + selectedBand + '...');
+  try {
+    const r = await fetch('/api/modem/band', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ band: selectedBand })
+    });
+    const d = await r.json();
+    if (d.ok) {
+      toast(d.message || 'Kunci band berhasil diterapkan!');
+      setTimeout(() => fetchModemSignal(true), 1500);
+    } else {
+      toast('Gagal: ' + (d.error || 'Respon error'));
+    }
+  } catch (e) {
+    toast('Gagal kunci band: ' + e.message);
+  }
+}
+
+async function changeModemIp() {
+  const btn = $('btn-change-ip');
+  btn.disabled = true;
+  btn.textContent = '⏳ Mengganti IP...';
+  toast('Memutus & menyambung data seluler...');
+  try {
+    const r = await fetch('/api/modem/change-ip', { method: 'POST' });
+    const d = await r.json();
+    toast(d.message || 'IP operator berhasil diganti!');
+    setTimeout(() => {
+      fetchModemSignal(true);
+      checkIpInfo(true);
+      btn.disabled = false;
+      btn.textContent = '🔄 Ganti IP Sekarang';
+    }, 3000);
+  } catch (e) {
+    toast('Error: ' + e.message);
+    btn.disabled = false;
+    btn.textContent = '🔄 Ganti IP Sekarang';
+  }
+}
+
+function rebootModem() {
+  if (!confirm('Yakin ingin merestart router modem Huawei B310s?')) return;
+  toast('Mengirim sinyal reboot router...');
+  fetch('/api/modem/reboot', { method: 'POST' }).then(() => {
+    toast('Router sedang restart! Halaman akan reload dalam 30 detik...', 6000);
+    setTimeout(() => location.reload(), 30000);
+  }).catch(() => toast('Gagal mengirim perintah reboot'));
+}
+
+async function sendUssd() {
+  const code = $('ussd-input').value.trim();
+  if (!code) return toast('Masukkan kode dial USSD (contoh *888#)');
+  const resBox = $('ussd-result');
+  resBox.style.display = 'block';
+  resBox.textContent = 'Memanggil ' + code + '...\nMenunggu balasan operator...';
+  try {
+    const r = await fetch('/api/modem/ussd', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code })
+    });
+    const d = await r.json();
+    resBox.textContent = `[Balasan USSD ${code}]\n${d.response || 'Tidak ada balasan'}`;
+  } catch (e) {
+    resBox.textContent = 'Gagal memanggil USSD: ' + e.message;
+  }
+}
+
+let lastSignalTime = 0;
+async function fetchModemSignal(force = false) {
+  const now = performance.now();
+  if (!force && now - lastSignalTime < 2500) return;
+  lastSignalTime = now;
+  try {
+    const r = await fetch('/api/modem/signal?t=' + Date.now());
+    const d = await r.json();
+    if (!d.ok) return;
+
+    if ($('modem-op')) $('modem-op').textContent = d.operator || '4G LTE';
+    if ($('modem-net')) $('modem-net').innerHTML = `${d.network_type || 'LTE'} • Cell ID: <span id="modem-cell">${d.cell_id || '-'}</span> • PCI: <span id="modem-pci">${d.pci || '-'}</span>`;
+    if ($('modem-rsrp')) $('modem-rsrp').textContent = (d.rsrp != null ? d.rsrp : '--') + ' dBm';
+    if ($('modem-rsrq')) $('modem-rsrq').textContent = (d.rsrq != null ? d.rsrq : '--') + ' dB';
+    if ($('modem-rssi')) $('modem-rssi').textContent = (d.rssi != null ? d.rssi : '--') + ' dBm';
+    if ($('modem-sinr')) $('modem-sinr').textContent = (d.sinr != null ? d.sinr : '--') + ' dB';
+    if ($('modem-band')) $('modem-band').textContent = `${d.band || 'Auto'} • ${d.bandwidth || '20 MHz'}`;
+
+    const bars = Math.max(1, Math.min(5, Number(d.bars) || 3));
+    for (let i = 1; i <= 5; i++) {
+      const b = $('sb-' + i);
+      if (b) {
+        if (i <= bars) b.classList.add('active');
+        else b.classList.remove('active');
+      }
+    }
+
+    const qBadge = $('modem-quality-badge');
+    if (qBadge) {
+      if (bars >= 4) {
+        qBadge.className = 'badge badge-on';
+        qBadge.textContent = 'EXCELLENT';
+      } else if (bars === 3) {
+        qBadge.className = 'badge badge-on';
+        qBadge.style.color = '#38bdf8';
+        qBadge.textContent = 'GOOD';
+      } else {
+        qBadge.className = 'badge badge-off';
+        qBadge.textContent = 'POOR';
+      }
+    }
+  } catch (_) {}
+}
+
 async function init() {
   try {
     const r = await fetch('/api/profiles');
@@ -1403,6 +1693,7 @@ async function init() {
   setInterval(fetchStatus, 3000);
   setInterval(() => {
     if (currentTab === 'system' && $('auto-log').checked) fetchLogs();
+    if (currentTab === 'modem' && $('auto-signal')?.checked) fetchModemSignal();
   }, 3000);
 }
 
