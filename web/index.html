@@ -460,6 +460,25 @@
 
     <div class="card">
       <div class="card-title">
+        <span>Status IP &amp; Operator <span class="jp-sub">ネットワーク情報</span></span>
+        <button class="btn btn-ghost btn-sm" onclick="checkIpInfo(true)">Cek IP</button>
+      </div>
+      <div class="stats">
+        <div class="stat-box">
+          <div class="stat-label">IP Publik</div>
+          <div id="info-ip" class="stat-val dl-color" style="font-size:1.02rem">--</div>
+          <div id="info-loc" class="speed-sub">-</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-label">Operator / ISP</div>
+          <div id="info-isp" class="stat-val ul-color" style="font-size:1.02rem">--</div>
+          <div id="info-type" class="speed-sub">Mode: Direct Operator</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">
         <span>Trafik Download &amp; Upload <span class="jp-sub">トラフィック監視</span></span>
         <button class="btn btn-ghost btn-sm" onclick="resetTrafficSession()">Reset Sesi</button>
       </div>
@@ -1134,6 +1153,7 @@ async function togglePower() {
       toast('Xray berjalan (PID ' + d.pid + ')');
     }
     await fetchStatus();
+    setTimeout(() => checkIpInfo(true), 1200);
   } catch (e) {
     toast(e.message, 4500);
   } finally {
@@ -1320,6 +1340,57 @@ function uploadOta() {
   xhr.send(file);
 }
 
+let ipCheckBusy = false;
+async function checkIpInfo(force = false) {
+  if (ipCheckBusy && !force) return;
+  ipCheckBusy = true;
+  const elIp = $('info-ip');
+  const elIsp = $('info-isp');
+  const elLoc = $('info-loc');
+  const elType = $('info-type');
+  if (!elIp) { ipCheckBusy = false; return; }
+
+  elIp.textContent = 'Memeriksa...';
+  elIsp.textContent = 'Mendeteksi...';
+
+  try {
+    const ctrl = new AbortController();
+    const tm = setTimeout(() => ctrl.abort(), 6000);
+    const r = await fetch('https://ipinfo.io/json?t=' + Date.now(), { signal: ctrl.signal, cache: 'no-store' });
+    clearTimeout(tm);
+    if (r.ok) {
+      const d = await r.json();
+      elIp.textContent = d.ip || '-';
+      elIsp.textContent = (d.org || '').replace(/^AS\d+\s+/, '') || 'ISP Terdeteksi';
+      elLoc.textContent = `${d.city || ''}${d.city && d.country ? ', ' : ''}${d.country || ''}` || '-';
+      if (elType) elType.textContent = currentRunning ? 'Mode: Tunnel Proxy' : 'Mode: Direct Operator';
+      ipCheckBusy = false;
+      return;
+    }
+    throw new Error('Fallback');
+  } catch (_) {
+    try {
+      const ctrl2 = new AbortController();
+      const tm2 = setTimeout(() => ctrl2.abort(), 6000);
+      const r2 = await fetch('https://ipwho.is/?t=' + Date.now(), { signal: ctrl2.signal, cache: 'no-store' });
+      clearTimeout(tm2);
+      const d2 = await r2.json();
+      if (d2 && d2.success !== false) {
+        elIp.textContent = d2.ip || '-';
+        elIsp.textContent = d2.connection?.isp || d2.isp || '-';
+        elLoc.textContent = `${d2.city || ''}${d2.city && d2.country_code ? ', ' : ''}${d2.country_code || ''}` || '-';
+        if (elType) elType.textContent = currentRunning ? 'Mode: Tunnel Proxy' : 'Mode: Direct Operator';
+        ipCheckBusy = false;
+        return;
+      }
+    } catch (_) {}
+  }
+  elIp.textContent = 'Gagal memuat';
+  elIsp.textContent = 'Offline / Timeout';
+  elLoc.textContent = 'Cek koneksi internet';
+  ipCheckBusy = false;
+}
+
 async function init() {
   try {
     const r = await fetch('/api/profiles');
@@ -1328,6 +1399,7 @@ async function init() {
     renderProfiles();
   } catch {}
   await fetchStatus();
+  checkIpInfo();
   setInterval(fetchStatus, 3000);
   setInterval(() => {
     if (currentTab === 'system' && $('auto-log').checked) fetchLogs();
