@@ -4,6 +4,14 @@ Panel manajemen Xray/V2Ray ultra-ringan (*zero-dependency*) dengan antarmuka **C
 
 ---
 
+## 📸 Tampilan Antarmuka (Preview)
+
+| 🏠 Home & Monitor Trafik | ⚙️ Profiles & Bug Injector | 📋 Real-time Logs & OTA |
+| :---: | :---: | :---: |
+| <img src="assets/preview-home.webp" width="300" alt="Home Tab" /> | <img src="assets/preview-profiles.webp" width="300" alt="Profiles Tab" /> | <img src="assets/preview-logs.webp" width="300" alt="Logs Tab" /> |
+
+---
+
 ## ✨ Fitur Utama
 - **Ultra Ringan & Hemat RAM:** Binary kompilasi statis Rust berukuran hanya **~291 KB (UPX)**, memakan RAM hanya ~2-4 MB (sangat aman untuk RAM 128 MB B310s-927).
 - **Native Dokodemo-Door:** Menggunakan fitur redirector bawaan Xray via `iptables` — **TIDAK memerlukan `redsocks` atau `ipt2socks`**.
@@ -27,6 +35,7 @@ Panel manajemen Xray/V2Ray ultra-ringan (*zero-dependency*) dengan antarmuka **C
   - `dist/xray` (Xray-core v26.11.9 ARMv7 terkompresi UPX)
   - `dist/net.sh` (Skrip iptables)
 - `.cargo/config.toml` — Konfigurasi target `armv7-unknown-linux-musleabihf` menggunakan `rust-lld` dan tuning hardware Balong (`+vfp3d16,-d32,-neon`).
+- `assets/` — Gambar preview screenshot antarmuka tema Anime.
 
 ---
 
