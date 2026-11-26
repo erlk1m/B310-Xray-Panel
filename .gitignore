@@ -20,3 +20,5 @@ config.json
 *.bak
 Thumbs.db
 .DS_Store
+/*.webp
+
