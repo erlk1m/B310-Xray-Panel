@@ -14,6 +14,7 @@ dev_data/
 profiles.json
 config.json
 auth.json
+inject_firmware.py
 
 # System & Editor files
 .idea/
