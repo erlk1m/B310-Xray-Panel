@@ -232,6 +232,14 @@
   .row-check input { width: auto; accent-color: var(--sakura); }
   .row-check label { margin: 0; color: var(--text); font-size: .84rem; cursor: pointer; }
 
+  /* Cyberpunk Toggle Switch */
+  .switch { position: relative; display: inline-block; width: 44px; height: 24px; flex-shrink: 0; }
+  .switch input { opacity: 0; width: 0; height: 0; }
+  .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: var(--bg-card2); border: 1px solid var(--border); transition: .3s; border-radius: 24px; }
+  .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 3px; bottom: 3px; background-color: var(--muted); transition: .3s; border-radius: 50%; }
+  input:checked + .slider { background-color: rgba(244, 114, 182, 0.25); border-color: var(--sakura); }
+  input:checked + .slider:before { transform: translateX(20px); background-color: var(--sakura); box-shadow: 0 0 8px var(--sakura); }
+
   /* Anime Vibrant Buttons */
   .btn {
     display: inline-flex; align-items: center; justify-content: center; gap: 6px;
@@ -651,7 +659,7 @@
           </div>
           <div>
             <strong id="modem-op" style="font-size:1.02rem;color:#fff;display:block">Memeriksa status modem...</strong>
-            <small id="modem-net" style="font-size:.74rem;color:var(--muted)">Cell ID: <span id="modem-cell">--</span> • PCI: <span id="modem-pci">--</span></small>
+            <small id="modem-net" style="font-size:.74rem;color:var(--muted)">Cell ID: <span id="modem-cell">--</span> • PCI: <span id="modem-pci">--</span> • EARFCN: <span id="modem-earfcn">--</span></small>
           </div>
         </div>
         <span id="modem-quality-badge" class="badge badge-off">STANDBY</span>
@@ -731,6 +739,70 @@
       <div class="btn-row">
         <button class="btn btn-primary" onclick="applyBandLock()">Terapkan Kunci Band</button>
       </div>
+    </div>
+
+    <!-- BYPASS KUOTA TETHERING (FIX TTL 64) -->
+    <div class="card">
+      <div class="card-title">
+        <span>Bypass Kuota Tethering (Fix TTL) <span class="jp-sub">テザリング制限解除</span></span>
+        <span id="ttl-badge" class="badge badge-off">TTL DEFAULT</span>
+      </div>
+      <p style="font-size:.78rem;color:var(--muted);margin-bottom:12px">
+        Mengubah nilai TTL (Time-To-Live) paket keluar menjadi <strong>64</strong> agar penggunaan internet dari laptop, PC, Smart TV, dan HP lain terbaca sebagai kuota reguler smartphone oleh operator (tidak memotong kuota hotspot).
+      </p>
+
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:12px;background:var(--bg-card2);border:1px solid var(--border);border-radius:12px;margin-bottom:12px">
+        <div>
+          <strong style="font-size:.88rem;color:#fff;display:block">Aktifkan Mangle TTL 64</strong>
+          <small style="color:var(--muted);font-size:.74rem">Otomatis set iptables mangle &amp; kernel sysctl router</small>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="ttl-toggle" onchange="toggleTtlSwitch()">
+          <span class="slider"></span>
+        </label>
+      </div>
+
+      <div class="grid-2" style="align-items:end">
+        <div class="field">
+          <label>Nilai Target TTL</label>
+          <input type="number" id="ttl-val-input" value="64" min="1" max="255" style="width:100%">
+        </div>
+        <div class="btn-row" style="margin-bottom:10px">
+          <button class="btn btn-ghost btn-sm" onclick="$('ttl-val-input').value=64">TTL 64 (Android/iOS)</button>
+          <button class="btn btn-ghost btn-sm" onclick="$('ttl-val-input').value=65">TTL 65 (Windows Base)</button>
+          <button class="btn btn-primary btn-sm" onclick="saveTtlConfig()">Simpan &amp; Terapkan</button>
+        </div>
+      </div>
+      <div id="ttl-msg" style="display:none;font-size:.76rem;margin-top:8px;padding:6px 10px;border-radius:8px"></div>
+    </div>
+
+    <!-- KUNCI MENARA PEMANCAR (CELL LOCK & EARFCN) -->
+    <div class="card">
+      <div class="card-title">
+        <span>Kunci Menara / BTS (Cell Lock) <span class="jp-sub">セルタワーロック</span></span>
+        <span id="cell-lock-badge" class="badge badge-off">AUTO (BEBAS)</span>
+      </div>
+      <p style="font-size:.78rem;color:var(--muted);margin-bottom:12px">
+        Kunci modem Balong secara spesifik ke pemancar BTS tertentu berdasarkan frekuensi kanal (<strong>EARFCN</strong>) dan sektor antena (<strong>PCI</strong>) agar koneksi stabil dan tidak melompat ke menara lain.
+      </p>
+
+      <div class="grid-2">
+        <div class="field">
+          <label>EARFCN (Frekuensi Kanal)</label>
+          <input type="number" id="cl-earfcn" placeholder="Contoh: 1800 atau 1392">
+        </div>
+        <div class="field">
+          <label>PCI (Physical Cell ID - Opsional)</label>
+          <input type="number" id="cl-pci" placeholder="Contoh: 325">
+        </div>
+      </div>
+
+      <div class="btn-row" style="margin-top:8px">
+        <button class="btn btn-ghost btn-sm" onclick="copySignalToCellLock()">📋 Salin dari Sinyal Terdeteksi</button>
+        <button class="btn btn-primary" onclick="applyCellLock('lock')">🔒 Kunci Menara (Cell Lock)</button>
+        <button class="btn btn-red btn-sm" onclick="applyCellLock('unlock')">🔓 Lepas Kunci (Auto BTS)</button>
+      </div>
+      <div id="cell-lock-msg" style="display:none;font-size:.76rem;margin-top:8px;padding:6px 10px;border-radius:8px"></div>
     </div>
 
     <!-- AKSI CEPAT MODEM -->
@@ -1114,7 +1186,11 @@ function switchTab(tab, btn) {
   $('tab-' + tab).classList.add('active');
   btn.classList.add('active');
   if (tab === 'system') fetchLogs();
-  if (tab === 'modem') fetchModemSignal(true);
+  if (tab === 'modem') {
+    fetchModemSignal(true);
+    fetchTtlStatus();
+    fetchCellLockStatus();
+  }
 }
 
 function fmtTime(sec) {
@@ -1871,8 +1947,9 @@ async function fetchModemSignal(force = false) {
     const d = await r.json();
     if (!d.ok) return;
 
+    window.lastSignalData = d;
     if ($('modem-op')) $('modem-op').textContent = d.operator || '--';
-    if ($('modem-net')) $('modem-net').innerHTML = `${d.network_type || '-'} • Cell ID: <span id="modem-cell">${d.cell_id || '--'}</span> • PCI: <span id="modem-pci">${d.pci || '--'}</span>`;
+    if ($('modem-net')) $('modem-net').innerHTML = `${d.network_type || '-'} • Cell ID: <span id="modem-cell">${d.cell_id || '--'}</span> • PCI: <span id="modem-pci">${d.pci || '--'}</span> • EARFCN: <span id="modem-earfcn">${d.earfcn || '--'}</span>`;
     if ($('modem-rsrp')) $('modem-rsrp').textContent = d.rsrp != null ? `${d.rsrp} dBm` : '-- dBm';
     if ($('modem-rsrq')) $('modem-rsrq').textContent = d.rsrq != null ? `${d.rsrq} dB` : '-- dB';
     if ($('modem-rssi')) $('modem-rssi').textContent = d.rssi != null ? `${d.rssi} dBm` : '-- dBm';
@@ -1927,6 +2004,129 @@ async function fetchModemSignal(force = false) {
   } catch (_) {}
 }
 
+async function fetchTtlStatus() {
+  try {
+    const r = await api('/api/modem/ttl?t=' + Date.now());
+    const d = await r.json();
+    if (!d.ok) return;
+    const toggle = $('ttl-toggle');
+    const badge = $('ttl-badge');
+    const valInput = $('ttl-val-input');
+    if (toggle) toggle.checked = !!d.enabled;
+    if (valInput && d.value) valInput.value = d.value;
+    if (badge) {
+      if (d.enabled) {
+        badge.className = 'badge badge-on';
+        badge.textContent = `TTL ${d.value || 64} AKTIF`;
+      } else {
+        badge.className = 'badge badge-off';
+        badge.textContent = 'TTL DEFAULT';
+      }
+    }
+  } catch (_) {}
+}
+
+async function toggleTtlSwitch() {
+  const toggle = $('ttl-toggle');
+  const enabled = toggle ? toggle.checked : false;
+  const val = Number($('ttl-val-input')?.value) || 64;
+  await saveTtlConfig(enabled, val);
+}
+
+async function saveTtlConfig(customEnabled = null, customVal = null) {
+  const enabled = customEnabled !== null ? customEnabled : ($('ttl-toggle')?.checked || false);
+  const value = customVal !== null ? customVal : (Number($('ttl-val-input')?.value) || 64);
+  const msgBox = $('ttl-msg');
+  try {
+    const r = await api('/api/modem/ttl', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ enabled, value })
+    });
+    const d = await r.json();
+    if (d.ok) {
+      toast(d.message || 'Pengaturan TTL berhasil disimpan!');
+      if (msgBox) {
+        msgBox.style.display = 'block';
+        msgBox.style.background = 'rgba(16, 185, 129, 0.15)';
+        msgBox.style.color = '#34d399';
+        msgBox.textContent = '✓ ' + (d.message || 'TTL berhasil diterapkan.');
+      }
+      fetchTtlStatus();
+    } else {
+      toast('Gagal: ' + (d.error || 'Error'));
+    }
+  } catch (e) {
+    toast('Error simpan TTL: ' + e.message);
+  }
+}
+
+async function fetchCellLockStatus() {
+  try {
+    const r = await api('/api/modem/cell-lock?t=' + Date.now());
+    const d = await r.json();
+    if (!d.ok) return;
+    const badge = $('cell-lock-badge');
+    if ($('cl-earfcn') && d.earfcn) $('cl-earfcn').value = d.earfcn;
+    if ($('cl-pci') && d.pci) $('cl-pci').value = d.pci;
+    if (badge) {
+      if (d.locked) {
+        badge.className = 'badge badge-on';
+        badge.textContent = `TERKUNCI: ${d.earfcn || '--'}${d.pci ? ' (PCI ' + d.pci + ')' : ''}`;
+      } else {
+        badge.className = 'badge badge-off';
+        badge.textContent = 'AUTO (BEBAS)';
+      }
+    }
+  } catch (_) {}
+}
+
+function copySignalToCellLock() {
+  const sig = window.lastSignalData;
+  if (!sig) {
+    toast('Belum ada data sinyal terbaca.');
+    return;
+  }
+  if (sig.earfcn && sig.earfcn !== '--') $('cl-earfcn').value = sig.earfcn;
+  if (sig.pci && sig.pci !== '--') $('cl-pci').value = sig.pci;
+  toast('Data sinyal aktif berhasil disalin ke kolom Cell Lock!');
+}
+
+async function applyCellLock(action) {
+  const earfcn = $('cl-earfcn')?.value?.trim() || '';
+  const pci = $('cl-pci')?.value?.trim() || '';
+  const msgBox = $('cell-lock-msg');
+
+  if (action === 'lock' && !earfcn) {
+    toast('Masukkan nomor EARFCN terlebih dahulu!');
+    return;
+  }
+
+  try {
+    const r = await api('/api/modem/cell-lock', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action, earfcn, pci })
+    });
+    const d = await r.json();
+    if (d.ok) {
+      toast(d.message || 'Perintah Cell Lock dikirim!');
+      if (msgBox) {
+        msgBox.style.display = 'block';
+        msgBox.style.background = action === 'lock' ? 'rgba(56, 189, 248, 0.15)' : 'rgba(239, 68, 68, 0.15)';
+        msgBox.style.color = action === 'lock' ? '#38bdf8' : '#f87171';
+        msgBox.textContent = (action === 'lock' ? '🔒 ' : '🔓 ') + (d.message || 'Selesai.');
+      }
+      fetchCellLockStatus();
+      setTimeout(() => fetchModemSignal(true), 2000);
+    } else {
+      toast('Gagal: ' + (d.error || 'Error'));
+    }
+  } catch (e) {
+    toast('Error Cell Lock: ' + e.message);
+  }
+}
+
 async function initApp() {
   try {
     const r = await api('/api/profiles');
@@ -1936,6 +2136,8 @@ async function initApp() {
   } catch {}
   await fetchStatus();
   checkIpInfo();
+  fetchTtlStatus();
+  fetchCellLockStatus();
   setInterval(fetchStatus, 3000);
   setInterval(() => {
     if (currentTab === 'system' && $('auto-log').checked) fetchLogs();

@@ -67,6 +67,29 @@ case "$ACTION" in
     fi
     ;;
 
+  ttl_set)
+    VAL="${2:-64}"
+    while iptables -t mangle -D POSTROUTING -j TTL --ttl-set "$VAL" 2>/dev/null; do :; done
+    iptables -t mangle -A POSTROUTING -j TTL --ttl-set "$VAL" 2>/dev/null
+    sysctl -w net.ipv4.ip_default_ttl="$VAL" 2>/dev/null || echo "$VAL" > /proc/sys/net/ipv4/ip_default_ttl 2>/dev/null
+    ;;
+
+  ttl_unset)
+    while iptables -t mangle -D POSTROUTING -j TTL --ttl-set 64 2>/dev/null; do :; done
+    while iptables -t mangle -D POSTROUTING -j TTL --ttl-set 65 2>/dev/null; do :; done
+    while iptables -t mangle -D POSTROUTING -j TTL --ttl-set 128 2>/dev/null; do :; done
+    ;;
+
+  ttl_status)
+    if iptables -t mangle -L POSTROUTING -n 2>/dev/null | grep -q "TTL"; then
+        echo "active"
+        exit 0
+    else
+        echo "inactive"
+        exit 1
+    fi
+    ;;
+
   *)
     echo "Usage: $0 {start|stop|status} [server_ip]"
     exit 1

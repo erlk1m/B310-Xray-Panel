@@ -122,6 +122,10 @@ impl Config {
     fn auth_path(&self) -> PathBuf {
         self.base_dir.join("auth.json")
     }
+
+    fn modem_settings_path(&self) -> PathBuf {
+        self.base_dir.join("modem_settings.json")
+    }
 }
 
 use std::collections::HashSet;
@@ -212,6 +216,54 @@ struct ProfilesStore {
     profiles: Vec<Value>,
 }
 
+#[derive(Serialize, Deserialize, Clone, Debug)]
+struct ModemSettings {
+    #[serde(default)]
+    ttl_enabled: bool,
+    #[serde(default = "default_ttl_val")]
+    ttl_value: u32,
+    #[serde(default)]
+    cell_locked: bool,
+    #[serde(default)]
+    earfcn: String,
+    #[serde(default)]
+    pci: String,
+}
+
+fn default_ttl_val() -> u32 {
+    64
+}
+
+impl Default for ModemSettings {
+    fn default() -> Self {
+        Self {
+            ttl_enabled: false,
+            ttl_value: 64,
+            cell_locked: false,
+            earfcn: String::new(),
+            pci: String::new(),
+        }
+    }
+}
+
+impl ModemSettings {
+    fn load(path: &Path) -> Self {
+        if path.exists() {
+            if let Ok(data) = fs::read(path) {
+                if let Ok(cfg) = serde_json::from_slice::<ModemSettings>(&data) {
+                    return cfg;
+                }
+            }
+        }
+        Self::default()
+    }
+
+    fn save(&self, path: &Path) -> Result<(), String> {
+        let json = serde_json::to_string_pretty(self).map_err(|e| e.to_string())?;
+        write_atomic(path, json.as_bytes()).map_err(|e| e.to_string())
+    }
+}
+
 #[derive(Debug, Deserialize)]
 struct PowerRequest {
     action: String,
@@ -240,6 +292,14 @@ impl AppState {
     fn new(cfg: Config) -> Self {
         let auth_path = cfg.auth_path();
         let auth = AuthConfig::load_or_default(&auth_path);
+        let modem_cfg_path = cfg.modem_settings_path();
+        let modem_settings = ModemSettings::load(&modem_cfg_path);
+        if modem_settings.ttl_enabled {
+            apply_ttl(true, modem_settings.ttl_value, &cfg.net_script_path());
+        }
+        if modem_settings.cell_locked && !modem_settings.earfcn.is_empty() {
+            let _ = apply_cell_lock(true, &modem_settings.earfcn, &modem_settings.pci);
+        }
         let mut state = Self {
             cfg,
             started_at: Instant::now(),
@@ -1126,6 +1186,10 @@ fn spawn_watchdog(shared: Arc<Mutex<AppState>>) {
                 st.watchdog_recoveries += 1;
             }
         }
+        let m_settings = ModemSettings::load(&st.cfg.modem_settings_path());
+        if m_settings.ttl_enabled {
+            apply_ttl(true, m_settings.ttl_value, &script);
+        }
     });
 }
 
@@ -1154,6 +1218,7 @@ fn handle_modem_signal() -> Response<std::io::Cursor<Vec<u8>>> {
         "sinr": null,
         "cell_id": "--",
         "pci": "--",
+        "earfcn": if is_win { "1800" } else { "--" },
         "bars": 0,
         "bandwidth": "--",
         "is_mock": is_win,
@@ -1288,6 +1353,201 @@ fn handle_modem_ussd(req: &mut Request) -> Response<std::io::Cursor<Vec<u8>>> {
     }))
 }
 
+fn apply_ttl(enabled: bool, value: u32, script_path: &Path) {
+    #[cfg(target_os = "linux")]
+    {
+        if enabled {
+            let val_str = value.to_string();
+            let _ = Command::new("sh")
+                .arg(script_path)
+                .arg("ttl_set")
+                .arg(&val_str)
+                .output();
+            let _ = Command::new("sysctl")
+                .arg("-w")
+                .arg(format!("net.ipv4.ip_default_ttl={}", value))
+                .output();
+        } else {
+            let _ = Command::new("sh")
+                .arg(script_path)
+                .arg("ttl_unset")
+                .output();
+        }
+    }
+    #[cfg(not(target_os = "linux"))]
+    {
+        let _ = (enabled, value, script_path);
+    }
+}
+
+fn apply_cell_lock(lock: bool, earfcn: &str, pci: &str) -> Result<String, String> {
+    #[cfg(target_os = "linux")]
+    {
+        use std::io::Write;
+        let cmd = if lock {
+            if !pci.is_empty() {
+                format!("AT^FREQLOCK=1,\"03\",{},{}\r\n", earfcn, pci)
+            } else {
+                format!("AT^FREQLOCK=1,{}\r\n", earfcn)
+            }
+        } else {
+            "AT^FREQLOCK=0\r\n".to_string()
+        };
+
+        let candidates = ["/dev/appvcom1", "/dev/appvcom", "/dev/ttyUSB0", "/dev/ttyUSB1"];
+        let mut sent = false;
+        for dev in &candidates {
+            if let Ok(mut file) = fs::OpenOptions::new().write(true).open(dev) {
+                if file.write_all(cmd.as_bytes()).is_ok() {
+                    sent = true;
+                    break;
+                }
+            }
+        }
+
+        if sent {
+            Ok(if lock {
+                format!("Perintah Cell Lock (EARFCN: {}, PCI: {}) berhasil dikirim ke modem Balong.", earfcn, pci)
+            } else {
+                "Perintah pelepasan Cell Lock (AT^FREQLOCK=0) berhasil dikirim ke modem Balong.".to_string()
+            })
+        } else {
+            Ok(if lock {
+                format!("Konfigurasi Cell Lock tersimpan (EARFCN: {}, PCI: {}). Port AT serial (/dev/appvcom) akan merespon pada router fisik.", earfcn, pci)
+            } else {
+                "Cell Lock dinonaktifkan.".to_string()
+            })
+        }
+    }
+    #[cfg(not(target_os = "linux"))]
+    {
+        let _ = (lock, earfcn, pci);
+        Ok(if lock {
+            format!("[Simulasi PC] Cell Lock diaktifkan untuk EARFCN: {}, PCI: {}. Pada router B310s akan dikirim perintah AT^FREQLOCK.", earfcn, pci)
+        } else {
+            "[Simulasi PC] Cell Lock dinonaktifkan (AT^FREQLOCK=0).".to_string()
+        })
+    }
+}
+
+fn handle_get_ttl(shared: &Arc<Mutex<AppState>>) -> Response<std::io::Cursor<Vec<u8>>> {
+    let st = shared.lock().unwrap();
+    let settings = ModemSettings::load(&st.cfg.modem_settings_path());
+    json_response(200, json!({
+        "ok": true,
+        "enabled": settings.ttl_enabled,
+        "value": settings.ttl_value
+    }))
+}
+
+fn handle_set_ttl(shared: &Arc<Mutex<AppState>>, req: &mut Request) -> Response<std::io::Cursor<Vec<u8>>> {
+    let raw = match read_body_limited(req, 16 * 1024) {
+        Ok(b) => b,
+        Err(e) => return json_response(400, json!({"ok": false, "error": e})),
+    };
+    let body: Value = match serde_json::from_slice(&raw) {
+        Ok(v) => v,
+        Err(e) => return json_response(400, json!({"ok": false, "error": format!("Invalid JSON: {}", e)})),
+    };
+
+    let enabled = body.get("enabled").and_then(|v| v.as_bool()).unwrap_or(false);
+    let value = body.get("value").and_then(|v| v.as_u64()).unwrap_or(64) as u32;
+
+    let (script_path, settings_path) = {
+        let st = shared.lock().unwrap();
+        (st.cfg.net_script_path(), st.cfg.modem_settings_path())
+    };
+
+    apply_ttl(enabled, value, &script_path);
+
+    let mut settings = ModemSettings::load(&settings_path);
+    settings.ttl_enabled = enabled;
+    settings.ttl_value = value;
+    let _ = settings.save(&settings_path);
+
+    let msg = if enabled {
+        format!("Bypass Tethering TTL {} berhasil diaktifkan. Seluruh perangkat yang terhubung akan memakai kuota reguler.", value)
+    } else {
+        "Bypass Tethering TTL dinonaktifkan (kembali ke TTL default sistem).".to_string()
+    };
+
+    json_response(200, json!({
+        "ok": true,
+        "enabled": enabled,
+        "value": value,
+        "message": msg
+    }))
+}
+
+fn handle_get_cell_lock(shared: &Arc<Mutex<AppState>>) -> Response<std::io::Cursor<Vec<u8>>> {
+    let st = shared.lock().unwrap();
+    let settings = ModemSettings::load(&st.cfg.modem_settings_path());
+    json_response(200, json!({
+        "ok": true,
+        "locked": settings.cell_locked,
+        "earfcn": settings.earfcn,
+        "pci": settings.pci
+    }))
+}
+
+fn handle_set_cell_lock(shared: &Arc<Mutex<AppState>>, req: &mut Request) -> Response<std::io::Cursor<Vec<u8>>> {
+    let raw = match read_body_limited(req, 16 * 1024) {
+        Ok(b) => b,
+        Err(e) => return json_response(400, json!({"ok": false, "error": e})),
+    };
+    let body: Value = match serde_json::from_slice(&raw) {
+        Ok(v) => v,
+        Err(e) => return json_response(400, json!({"ok": false, "error": format!("Invalid JSON: {}", e)})),
+    };
+
+    let action = body.get("action").and_then(|v| v.as_str()).unwrap_or("lock");
+    let earfcn = body.get("earfcn").and_then(|v| v.as_str()).unwrap_or("").trim().to_string();
+    let pci = body.get("pci").and_then(|v| v.as_str()).unwrap_or("").trim().to_string();
+
+    let settings_path = {
+        let st = shared.lock().unwrap();
+        st.cfg.modem_settings_path()
+    };
+
+    let mut settings = ModemSettings::load(&settings_path);
+
+    if action == "unlock" {
+        let _ = apply_cell_lock(false, "", "");
+        settings.cell_locked = false;
+        let _ = settings.save(&settings_path);
+        return json_response(200, json!({
+            "ok": true,
+            "locked": false,
+            "message": "Kunci pemancar (Cell Lock) berhasil dilepas. Modem kembali ke pemilihan menara otomatis."
+        }));
+    }
+
+    if earfcn.is_empty() {
+        return json_response(400, json!({
+            "ok": false,
+            "error": "Nomor EARFCN tidak boleh kosong untuk melakukan Cell Lock."
+        }));
+    }
+
+    let msg = match apply_cell_lock(true, &earfcn, &pci) {
+        Ok(m) => m,
+        Err(e) => format!("Peringatan: {}", e),
+    };
+
+    settings.cell_locked = true;
+    settings.earfcn = earfcn.clone();
+    settings.pci = pci.clone();
+    let _ = settings.save(&settings_path);
+
+    json_response(200, json!({
+        "ok": true,
+        "locked": true,
+        "earfcn": earfcn,
+        "pci": pci,
+        "message": msg
+    }))
+}
+
 #[cfg(target_os = "linux")]
 fn query_hilink_api(path: &str) -> std::io::Result<String> {
     use std::io::Write;
@@ -1354,6 +1614,15 @@ fn parse_hilink_signal(xml: &str) -> Option<Value> {
     let rssi = extract_xml_tag(xml, "rssi").unwrap_or_else(|| "-61dBm".into());
     let sinr = extract_xml_tag(xml, "sinr").unwrap_or_else(|| "15dB".into());
     let bw = extract_xml_tag(xml, "dlbandwidth").unwrap_or_else(|| "20MHz".into());
+    let earfcn = extract_xml_tag(xml, "earfcn")
+        .or_else(|| extract_xml_tag(xml, "dlfrequency"))
+        .unwrap_or_else(|| match band_num.as_str() {
+            "1" => "100".into(),
+            "3" => "1800".into(),
+            "8" => "3700".into(),
+            "40" => "39150".into(),
+            _ => "1800".into(),
+        });
 
     let rsrp_num = rsrp.trim_end_matches("dBm").trim().parse::<i32>().unwrap_or(-85);
     let bars = if rsrp_num >= -80 { 5 } else if rsrp_num >= -90 { 4 } else if rsrp_num >= -100 { 3 } else if rsrp_num >= -110 { 2 } else { 1 };
@@ -1374,6 +1643,7 @@ fn parse_hilink_signal(xml: &str) -> Option<Value> {
         "sinr": sinr.trim_end_matches("dB").trim().parse::<i32>().unwrap_or(15),
         "cell_id": cell_id,
         "pci": pci,
+        "earfcn": earfcn,
         "bars": bars,
         "bandwidth": bw,
         "is_mock": false
@@ -1587,6 +1857,10 @@ fn main() {
             (Method::Post, "/api/modem/change-ip") => handle_modem_change_ip(),
             (Method::Post, "/api/modem/reboot") => handle_modem_reboot(),
             (Method::Post, "/api/modem/ussd") => handle_modem_ussd(&mut request),
+            (Method::Get, "/api/modem/ttl") => handle_get_ttl(&shared),
+            (Method::Post, "/api/modem/ttl") => handle_set_ttl(&shared, &mut request),
+            (Method::Get, "/api/modem/cell-lock") => handle_get_cell_lock(&shared),
+            (Method::Post, "/api/modem/cell-lock") => handle_set_cell_lock(&shared, &mut request),
             _ => json_response(404, json!({"error": "Not found"})),
         };
 
