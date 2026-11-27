@@ -126,6 +126,10 @@ impl Config {
     fn modem_settings_path(&self) -> PathBuf {
         self.base_dir.join("modem_settings.json")
     }
+
+    fn routing_path(&self) -> PathBuf {
+        self.base_dir.join("routing.json")
+    }
 }
 
 use std::collections::HashSet;
@@ -251,6 +255,67 @@ impl ModemSettings {
         if path.exists() {
             if let Ok(data) = fs::read(path) {
                 if let Ok(cfg) = serde_json::from_slice::<ModemSettings>(&data) {
+                    return cfg;
+                }
+            }
+        }
+        Self::default()
+    }
+
+    fn save(&self, path: &Path) -> Result<(), String> {
+        let json = serde_json::to_string_pretty(self).map_err(|e| e.to_string())?;
+        write_atomic(path, json.as_bytes()).map_err(|e| e.to_string())
+    }
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+struct RoutingSettings {
+    #[serde(default = "default_routing_mode")]
+    mode: String,
+    #[serde(default = "default_true")]
+    adblock: bool,
+    #[serde(default = "default_true")]
+    bypass_indo_banks: bool,
+    #[serde(default = "default_true")]
+    bypass_indo_marketplace: bool,
+    #[serde(default = "default_true")]
+    bypass_indo_games: bool,
+    #[serde(default = "default_true")]
+    bypass_id_tld: bool,
+    #[serde(default)]
+    custom_direct: String,
+    #[serde(default)]
+    custom_proxy: String,
+}
+
+fn default_routing_mode() -> String {
+    "rule".to_string()
+}
+
+fn default_true() -> bool {
+    true
+}
+
+impl Default for RoutingSettings {
+    fn default() -> Self {
+        Self {
+            mode: "rule".to_string(),
+            adblock: true,
+            bypass_indo_banks: true,
+            bypass_indo_marketplace: true,
+            bypass_indo_games: true,
+            bypass_id_tld: true,
+            custom_direct: String::new(),
+            custom_proxy: String::new(),
+        }
+    }
+}
+
+impl RoutingSettings {
+    fn load(path: &Path) -> Self {
+        if path.exists() {
+            if let Ok(data) = fs::read(path) {
+                if let Ok(cfg) = serde_json::from_slice::<RoutingSettings>(&data) {
                     return cfg;
                 }
             }
@@ -1548,6 +1613,41 @@ fn handle_set_cell_lock(shared: &Arc<Mutex<AppState>>, req: &mut Request) -> Res
     }))
 }
 
+fn handle_get_routing(shared: &Arc<Mutex<AppState>>) -> Response<std::io::Cursor<Vec<u8>>> {
+    let st = shared.lock().unwrap();
+    let settings = RoutingSettings::load(&st.cfg.routing_path());
+    json_response(200, json!({
+        "ok": true,
+        "settings": settings
+    }))
+}
+
+fn handle_post_routing(shared: &Arc<Mutex<AppState>>, req: &mut Request) -> Response<std::io::Cursor<Vec<u8>>> {
+    let raw = match read_body_limited(req, 32 * 1024) {
+        Ok(b) => b,
+        Err(e) => return json_response(400, json!({"ok": false, "error": e})),
+    };
+    let settings: RoutingSettings = match serde_json::from_slice(&raw) {
+        Ok(s) => s,
+        Err(e) => return json_response(400, json!({"ok": false, "error": format!("Invalid JSON: {}", e)})),
+    };
+
+    let path = {
+        let st = shared.lock().unwrap();
+        st.cfg.routing_path()
+    };
+
+    if let Err(e) = settings.save(&path) {
+        return json_response(500, json!({"ok": false, "error": format!("Gagal menyimpan aturan routing: {}", e)}));
+    }
+
+    json_response(200, json!({
+        "ok": true,
+        "message": "Aturan Smart Routing berhasil disimpan!",
+        "settings": settings
+    }))
+}
+
 #[cfg(target_os = "linux")]
 fn query_hilink_api(path: &str) -> std::io::Result<String> {
     use std::io::Write;
@@ -1861,6 +1961,8 @@ fn main() {
             (Method::Post, "/api/modem/ttl") => handle_set_ttl(&shared, &mut request),
             (Method::Get, "/api/modem/cell-lock") => handle_get_cell_lock(&shared),
             (Method::Post, "/api/modem/cell-lock") => handle_set_cell_lock(&shared, &mut request),
+            (Method::Get, "/api/routing") => handle_get_routing(&shared),
+            (Method::Post, "/api/routing") => handle_post_routing(&shared, &mut request),
             _ => json_response(404, json!({"error": "Not found"})),
         };
 

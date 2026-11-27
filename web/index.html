@@ -636,6 +636,138 @@
     </div>
   </section>
 
+  <!-- TAB ROUTING / RULES (OPENCLASH STYLE) -->
+  <section id="tab-routing" class="tab-pane">
+    <div class="card">
+      <div class="card-title">
+        <span>Mode Operasi Routing <span class="jp-sub">ルーティングモード</span></span>
+        <span id="routing-mode-badge" class="badge badge-on">SMART RULES</span>
+      </div>
+      <p style="font-size:.78rem;color:var(--muted);margin-bottom:12px">
+        Pilih bagaimana lalu lintas internet dari router B310s diarahkan ke proxy VPS atau koneksi langsung:
+      </p>
+
+      <div class="band-grid" style="grid-template-columns: repeat(3, 1fr); margin-bottom: 12px">
+        <button class="band-btn selected" id="rmode-rule" onclick="setRoutingMode('rule')">
+          🌸 Smart Rules
+          <small>Otomatis (Bypass &amp; Ads)</small>
+        </button>
+        <button class="band-btn" id="rmode-global" onclick="setRoutingMode('global')">
+          🌐 Global Mode
+          <small>Semua Lewat Proxy</small>
+        </button>
+        <button class="band-btn" id="rmode-direct" onclick="setRoutingMode('direct')">
+          ⚡ Direct Only
+          <small>Semua Tanpa Proxy</small>
+        </button>
+      </div>
+
+      <div id="routing-mode-desc" style="padding:10px 14px;background:var(--bg-card2);border:1px solid var(--border);border-radius:10px;font-size:.78rem;color:#fbcfe8;line-height:1.45">
+        🌸 <strong>Smart Rules Aktif:</strong> Domain iklan &amp; tracker diblokir. Situs bank, marketplace, game online, dan domain .id otomatis dialihkan langsung (Direct) agar tidak terblokir dan ping tetap rendah. Sisanya dialihkan lewat VPS proxy.
+      </div>
+    </div>
+
+    <!-- PRESET ATURAN CERDAS (SMART TOGGLES) -->
+    <div class="card" id="card-smart-rules">
+      <div class="card-title">
+        <span>Preset Aturan Cerdas <span class="jp-sub">スマートプリセット</span></span>
+        <span style="font-size:.66rem;color:var(--cyan)">Xray Inbound Sniffer</span>
+      </div>
+      <p style="font-size:.78rem;color:var(--muted);margin-bottom:12px">
+        Aktifkan atau nonaktifkan aturan pemisahan lalu lintas sesuai kebutuhan jaringan Anda:
+      </p>
+
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <!-- 1. AdBlock -->
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:11px 13px;background:var(--bg-card2);border:1px solid var(--border);border-radius:12px">
+          <div>
+            <strong style="font-size:.85rem;color:#fff;display:block">🚫 AdBlock &amp; Anti-Tracker (Blackhole)</strong>
+            <small style="color:var(--muted);font-size:.73rem">Blokir otomatis iklan banner, pop-up, dan tracker analitik Google/Yahoo/Unity</small>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="rt-adblock" checked>
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <!-- 2. Bypass Bank -->
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:11px 13px;background:var(--bg-card2);border:1px solid var(--border);border-radius:12px">
+          <div>
+            <strong style="font-size:.85rem;color:#fff;display:block">🏦 Bypass Perbankan &amp; FinTech Indonesia</strong>
+            <small style="color:var(--muted);font-size:.73rem">Direct: BCA, Mandiri Livin, BRImo, BNI, Jago, DANA, OVO, GoPay (anti-suspend IP luar)</small>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="rt-banks" checked>
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <!-- 3. Bypass Marketplace & Streaming -->
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:11px 13px;background:var(--bg-card2);border:1px solid var(--border);border-radius:12px">
+          <div>
+            <strong style="font-size:.85rem;color:#fff;display:block">🛍️ Bypass Marketplace &amp; Video Lokal</strong>
+            <small style="color:var(--muted);font-size:.73rem">Direct: Tokopedia, Shopee, Bukalapak, Vidio.com, RCTI+ (kecepatan maksimal)</small>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="rt-marketplace" checked>
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <!-- 4. Bypass Game -->
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:11px 13px;background:var(--bg-card2);border:1px solid var(--border);border-radius:12px">
+          <div>
+            <strong style="font-size:.85rem;color:#fff;display:block">🎮 Bypass Game Online Server Indo</strong>
+            <small style="color:var(--muted);font-size:.73rem">Direct: Mobile Legends, Free Fire, PUBG Mobile, Valorant (ping stabil 15-30ms)</small>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="rt-games" checked>
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <!-- 5. Bypass .id -->
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:11px 13px;background:var(--bg-card2);border:1px solid var(--border);border-radius:12px">
+          <div>
+            <strong style="font-size:.85rem;color:#fff;display:block">🇮🇩 Bypass Seluruh Domain .id / .co.id</strong>
+            <small style="color:var(--muted);font-size:.73rem">Direct: Otomatis semua website berakhiran .id, .co.id, .go.id, .ac.id</small>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="rt-idtld" checked>
+            <span class="slider"></span>
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <!-- ATURAN KUSTOM PENGGUNA -->
+    <div class="card">
+      <div class="card-title">
+        <span>Aturan Domain Kustom <span class="jp-sub">カスタムルール</span></span>
+        <button class="btn btn-ghost btn-sm" onclick="resetRoutingToDefault()">Reset Default</button>
+      </div>
+      <p style="font-size:.78rem;color:var(--muted);margin-bottom:12px">
+        Tambahkan domain khusus yang Anda inginkan (satu domain per baris tanpa http/https):
+      </p>
+
+      <div class="grid-2">
+        <div class="field">
+          <label style="color:#34d399">⚡ Domain Selalu DIRECT (Tanpa Proxy)</label>
+          <textarea id="rt-custom-direct" rows="4" placeholder="zoom.us&#10;teams.microsoft.com&#10;domainkantor.com"></textarea>
+        </div>
+        <div class="field">
+          <label style="color:#f472b6">🌸 Domain Selalu PROXY (Lewat VPS)</label>
+          <textarea id="rt-custom-proxy" rows="4" placeholder="reddit.com&#10;vimeo.com&#10;situsluar.com"></textarea>
+        </div>
+      </div>
+
+      <div class="btn-row" style="margin-top:10px">
+        <button class="btn btn-primary" onclick="saveRoutingConfig()">💾 Simpan &amp; Terapkan Aturan</button>
+      </div>
+      <div id="routing-msg" style="display:none;font-size:.76rem;margin-top:8px;padding:6px 10px;border-radius:8px"></div>
+    </div>
+  </section>
+
   <!-- TAB MODEM & LTE TOOLS -->
   <section id="tab-modem" class="tab-pane">
     <div class="card">
@@ -1025,6 +1157,10 @@
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 10.5L12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>
     Home
   </button>
+  <button data-tab="routing" onclick="switchTab('routing',this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>
+    Routing
+  </button>
   <button data-tab="modem" onclick="switchTab('modem',this)">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 20h20"/><path d="M5 20V16"/><path d="M9 20V12"/><path d="M13 20V8"/><path d="M17 20V4"/></svg>
     LTE Tools
@@ -1186,6 +1322,7 @@ function switchTab(tab, btn) {
   $('tab-' + tab).classList.add('active');
   btn.classList.add('active');
   if (tab === 'system') fetchLogs();
+  if (tab === 'routing') fetchRouting();
   if (tab === 'modem') {
     fetchModemSignal(true);
     fetchTtlStatus();
@@ -1394,19 +1531,139 @@ function buildXrayConfig(p) {
         }
       ];
 
-  const rules = currentPlatform === 'windows'
-    ? [{ type: 'field', inboundTag: ['socks-in', 'http-in'], outboundTag: 'proxy' }]
-    : [{ type: 'field', inboundTag: ['transparent-dns'], outboundTag: 'proxy' }];
+  const rs = routingSettings || {
+    mode: 'rule',
+    adblock: true,
+    bypass_indo_banks: true,
+    bypass_indo_marketplace: true,
+    bypass_indo_games: true,
+    bypass_id_tld: true,
+    custom_direct: '',
+    custom_proxy: ''
+  };
+
+  const rules = [];
+
+  // LAN / Private IP always direct (anti-loop & local router access)
+  const privateCidrs = [
+    '10.0.0.0/8', '172.16.0.0/12', '192.168.0.0/16', '127.0.0.0/8',
+    '::1/128', 'fc00::/7', 'fe80::/10'
+  ];
+  rules.push({ type: 'field', ip: privateCidrs, outboundTag: 'direct' });
+
+  if (rs.mode === 'direct') {
+    // Mode Direct Only
+    rules.push({ type: 'field', network: 'tcp,udp', outboundTag: 'direct' });
+  } else if (rs.mode === 'global') {
+    // Mode Global Proxy
+    if (rs.custom_direct && rs.custom_direct.trim()) {
+      const cDirect = rs.custom_direct.split(/[\r\n,]+/).map(s => s.trim()).filter(Boolean).map(s => s.startsWith('domain:') || s.startsWith('full:') || s.startsWith('regexp:') ? s : 'domain:' + s);
+      if (cDirect.length) rules.push({ type: 'field', domain: cDirect, outboundTag: 'direct' });
+    }
+    rules.push({ type: 'field', network: 'tcp,udp', outboundTag: 'proxy' });
+  } else {
+    // Mode Smart Rules (OpenClash Style)
+    // 1. AdBlock & Anti-Tracker (Blackhole)
+    if (rs.adblock) {
+      rules.push({
+        type: 'field',
+        domain: [
+          'domain:doubleclick.net', 'domain:googlesyndication.com', 'domain:googleadservices.com',
+          'domain:adnxs.com', 'domain:advertising.com', 'domain:adcolony.com',
+          'domain:unityads.unity3d.com', 'domain:vungle.com', 'domain:applovin.com',
+          'domain:ironsrc.com', 'domain:adjust.com', 'domain:appsflyer.com',
+          'domain:branch.io', 'domain:scorecardresearch.com', 'domain:criteo.com',
+          'domain:taboola.com', 'domain:outbrain.com', 'domain:popads.net',
+          'domain:propellerads.com', 'domain:adsterra.com', 'domain:adservice.google.com'
+        ],
+        outboundTag: 'block'
+      });
+    }
+
+    // 2. Custom Proxy domains
+    if (rs.custom_proxy && rs.custom_proxy.trim()) {
+      const cProxy = rs.custom_proxy.split(/[\r\n,]+/).map(s => s.trim()).filter(Boolean).map(s => s.startsWith('domain:') || s.startsWith('full:') || s.startsWith('regexp:') ? s : 'domain:' + s);
+      if (cProxy.length) rules.push({ type: 'field', domain: cProxy, outboundTag: 'proxy' });
+    }
+
+    // 3. Custom Direct domains
+    if (rs.custom_direct && rs.custom_direct.trim()) {
+      const cDirect = rs.custom_direct.split(/[\r\n,]+/).map(s => s.trim()).filter(Boolean).map(s => s.startsWith('domain:') || s.startsWith('full:') || s.startsWith('regexp:') ? s : 'domain:' + s);
+      if (cDirect.length) rules.push({ type: 'field', domain: cDirect, outboundTag: 'direct' });
+    }
+
+    // 4. Bypass Indonesian Banks & FinTech
+    if (rs.bypass_indo_banks) {
+      rules.push({
+        type: 'field',
+        domain: [
+          'domain:klikbca.com', 'domain:bca.co.id', 'domain:bankmandiri.co.id',
+          'domain:livin.bankmandiri.co.id', 'domain:bri.co.id', 'domain:brimo.bri.co.id',
+          'domain:bni.co.id', 'domain:bnicall.co.id', 'domain:jago.com',
+          'domain:dana.id', 'domain:ovo.id', 'domain:gopay.co.id',
+          'domain:linkaja.id', 'domain:seabank.co.id', 'domain:bankneo.co.id',
+          'domain:aladinbank.id', 'domain:jenius.com', 'domain:blu.id'
+        ],
+        outboundTag: 'direct'
+      });
+    }
+
+    // 5. Bypass Indonesian Marketplace & Streaming
+    if (rs.bypass_indo_marketplace) {
+      rules.push({
+        type: 'field',
+        domain: [
+          'domain:tokopedia.com', 'domain:tokopedia.net', 'domain:shopee.co.id',
+          'domain:shopeepay.co.id', 'domain:bukalapak.com', 'domain:lazada.co.id',
+          'domain:blibli.com', 'domain:vidio.com', 'domain:rctiplus.com',
+          'domain:visionplus.id', 'domain:telkomsel.com', 'domain:myim3app.im3.id',
+          'domain:xl.co.id', 'domain:axis.co.id'
+        ],
+        outboundTag: 'direct'
+      });
+    }
+
+    // 6. Bypass Indonesian Online Games
+    if (rs.bypass_indo_games) {
+      rules.push({
+        type: 'field',
+        domain: [
+          'domain:mobilelegends.com', 'domain:moonton.com', 'domain:garena.co.id',
+          'domain:ff.garena.com', 'domain:pubgmobile.com', 'domain:riotgames.com',
+          'domain:pvp.net', 'domain:pointblank.id'
+        ],
+        outboundTag: 'direct'
+      });
+    }
+
+    // 7. Bypass .id TLD
+    if (rs.bypass_id_tld) {
+      rules.push({
+        type: 'field',
+        domain: ['regexp:\\.id$'],
+        outboundTag: 'direct'
+      });
+    }
+
+    // Transparent DNS handling on linux
+    if (currentPlatform !== 'windows') {
+      rules.push({ type: 'field', inboundTag: ['transparent-dns'], outboundTag: 'proxy' });
+    }
+
+    // Default fallback to proxy
+    rules.push({ type: 'field', network: 'tcp,udp', outboundTag: 'proxy' });
+  }
 
   return {
     log: { loglevel: 'warning' },
     inbounds,
     outbounds: [
       { tag: 'proxy', protocol: p.protocol, settings, streamSettings: stream },
-      { tag: 'direct', protocol: 'freedom' }
+      { tag: 'direct', protocol: 'freedom' },
+      { tag: 'block', protocol: 'blackhole', settings: { response: { type: 'none' } } }
     ],
     routing: {
-      domainStrategy: 'AsIs',
+      domainStrategy: 'IPIfNonMatch',
       rules
     }
   };
@@ -2127,6 +2384,144 @@ async function applyCellLock(action) {
   }
 }
 
+let routingSettings = {
+  mode: 'rule',
+  adblock: true,
+  bypass_indo_banks: true,
+  bypass_indo_marketplace: true,
+  bypass_indo_games: true,
+  bypass_id_tld: true,
+  custom_direct: '',
+  custom_proxy: ''
+};
+
+async function fetchRouting() {
+  try {
+    const r = await api('/api/routing?t=' + Date.now());
+    const d = await r.json();
+    if (d && d.settings) {
+      routingSettings = d.settings;
+      renderRoutingUI();
+    } else if (d && d.mode) {
+      routingSettings = d;
+      renderRoutingUI();
+    }
+  } catch (e) {
+    console.error('Gagal mengambil pengaturan routing:', e);
+  }
+}
+
+function renderRoutingUI() {
+  const mode = routingSettings.mode || 'rule';
+  const badge = $('routing-mode-badge');
+  const desc = $('routing-mode-desc');
+  const cardSmart = $('card-smart-rules');
+
+  ['rule', 'global', 'direct'].forEach(m => {
+    const b = $('rmode-' + m);
+    if (b) {
+      if (m === mode) b.classList.add('selected');
+      else b.classList.remove('selected');
+    }
+  });
+
+  if (badge) {
+    if (mode === 'rule') {
+      badge.className = 'badge badge-on';
+      badge.textContent = '🌸 SMART RULES';
+    } else if (mode === 'global') {
+      badge.className = 'badge badge-warn';
+      badge.textContent = '🌐 GLOBAL PROXY';
+    } else {
+      badge.className = 'badge badge-off';
+      badge.textContent = '⚡ DIRECT ONLY';
+    }
+  }
+
+  if (desc) {
+    if (mode === 'rule') {
+      desc.innerHTML = '🌸 <strong>Smart Rules Aktif:</strong> Domain iklan &amp; tracker diblokir (Blackhole). Situs bank, marketplace, game online server Indo, dan domain .id otomatis dialihkan langsung (Direct). Sisanya dialihkan lewat VPS proxy.';
+    } else if (mode === 'global') {
+      desc.innerHTML = '🌐 <strong>Global Mode Aktif:</strong> Semua lalu lintas internet dialihkan sepenuhnya melewati VPS proxy (kecuali IP jaringan lokal LAN router).';
+    } else {
+      desc.innerHTML = '⚡ <strong>Direct Mode Aktif:</strong> Semua lalu lintas internet dilewatkan langsung tanpa proxy VPS (koneksi normal operator seluler).';
+    }
+  }
+
+  if (cardSmart) {
+    cardSmart.style.opacity = mode === 'rule' ? '1' : '0.45';
+    cardSmart.style.pointerEvents = mode === 'rule' ? 'auto' : 'none';
+  }
+
+  if ($('rt-adblock')) $('rt-adblock').checked = !!routingSettings.adblock;
+  if ($('rt-banks')) $('rt-banks').checked = !!routingSettings.bypass_indo_banks;
+  if ($('rt-marketplace')) $('rt-marketplace').checked = !!routingSettings.bypass_indo_marketplace;
+  if ($('rt-games')) $('rt-games').checked = !!routingSettings.bypass_indo_games;
+  if ($('rt-idtld')) $('rt-idtld').checked = !!routingSettings.bypass_id_tld;
+  if ($('rt-custom-direct')) $('rt-custom-direct').value = routingSettings.custom_direct || '';
+  if ($('rt-custom-proxy')) $('rt-custom-proxy').value = routingSettings.custom_proxy || '';
+}
+
+function setRoutingMode(mode) {
+  routingSettings.mode = mode;
+  renderRoutingUI();
+}
+
+async function saveRoutingConfig() {
+  routingSettings.mode = $('rmode-rule')?.classList.contains('selected') ? 'rule' :
+                         ($('rmode-global')?.classList.contains('selected') ? 'global' : 'direct');
+  routingSettings.adblock = $('rt-adblock')?.checked ?? true;
+  routingSettings.bypass_indo_banks = $('rt-banks')?.checked ?? true;
+  routingSettings.bypass_indo_marketplace = $('rt-marketplace')?.checked ?? true;
+  routingSettings.bypass_indo_games = $('rt-games')?.checked ?? true;
+  routingSettings.bypass_id_tld = $('rt-idtld')?.checked ?? true;
+  routingSettings.custom_direct = $('rt-custom-direct')?.value || '';
+  routingSettings.custom_proxy = $('rt-custom-proxy')?.value || '';
+
+  const msgBox = $('routing-msg');
+  try {
+    const r = await api('/api/routing', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(routingSettings)
+    });
+    const d = await r.json();
+    if (d.ok) {
+      toast('Aturan routing berhasil disimpan!');
+      if (msgBox) {
+        msgBox.style.display = 'block';
+        msgBox.style.background = 'rgba(52, 211, 153, 0.15)';
+        msgBox.style.color = '#34d399';
+        msgBox.textContent = '✓ Aturan routing berhasil disimpan. Jika Xray sedang terhubung, restart koneksi untuk menerapkan aturan baru.';
+      }
+      if (currentRunning) {
+        toast('Menerapkan aturan ke Xray yang sedang aktif...');
+        togglePower().then(() => setTimeout(togglePower, 1000));
+      }
+    } else {
+      toast('Gagal: ' + (d.error || 'Unknown error'));
+    }
+  } catch (e) {
+    toast('Error menyimpan routing: ' + e.message);
+  }
+}
+
+function resetRoutingToDefault() {
+  if (!confirm('Kembalikan aturan routing ke bawaan pabrik?')) return;
+  routingSettings = {
+    mode: 'rule',
+    adblock: true,
+    bypass_indo_banks: true,
+    bypass_indo_marketplace: true,
+    bypass_indo_games: true,
+    bypass_id_tld: true,
+    custom_direct: '',
+    custom_proxy: ''
+  };
+  renderRoutingUI();
+  saveRoutingConfig();
+}
+
 async function initApp() {
   try {
     const r = await api('/api/profiles');
@@ -2135,6 +2530,7 @@ async function initApp() {
     renderProfiles();
   } catch {}
   await fetchStatus();
+  fetchRouting();
   checkIpInfo();
   fetchTtlStatus();
   fetchCellLockStatus();
