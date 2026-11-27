@@ -1,5 +1,6 @@
 # User requested exclusions
 B310/
+B310S-927/
 
 # Rust / Cargo build outputs
 /target/
@@ -12,6 +13,7 @@ dev_data/
 *.pid
 profiles.json
 config.json
+auth.json
 
 # System & Editor files
 .idea/

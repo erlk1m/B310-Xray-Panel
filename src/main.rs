@@ -118,6 +118,90 @@ impl Config {
     fn net_script_path(&self) -> PathBuf {
         self.base_dir.join("net.sh")
     }
+
+    fn auth_path(&self) -> PathBuf {
+        self.base_dir.join("auth.json")
+    }
+}
+
+use std::collections::HashSet;
+use std::hash::{DefaultHasher, Hash, Hasher};
+use std::time::{SystemTime, UNIX_EPOCH};
+
+fn hash_secret(salt: &str, password: &str) -> String {
+    let mut h = DefaultHasher::new();
+    salt.hash(&mut h);
+    password.hash(&mut h);
+    let mut val = h.finish();
+    for i in 0..1024u32 {
+        let mut h2 = DefaultHasher::new();
+        val.hash(&mut h2);
+        i.hash(&mut h2);
+        val = h2.finish();
+    }
+    format!("{:016x}", val)
+}
+
+fn generate_session_token() -> String {
+    let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_nanos();
+    let mut h = DefaultHasher::new();
+    now.hash(&mut h);
+    std::process::id().hash(&mut h);
+    let mut val = h.finish();
+    for i in 0..256u32 {
+        let mut h2 = DefaultHasher::new();
+        val.hash(&mut h2);
+        i.hash(&mut h2);
+        val = h2.finish();
+    }
+    format!("tk_{:016x}{:08x}", val, (now & 0xffffffff) as u32)
+}
+
+#[derive(Serialize, Deserialize, Clone)]
+struct AuthConfig {
+    salt: String,
+    password_hash: String,
+}
+
+impl AuthConfig {
+    fn default_config() -> Self {
+        let salt = "sakura_b310_auth".to_string();
+        let hash = hash_secret(&salt, "admin");
+        Self {
+            salt,
+            password_hash: hash,
+        }
+    }
+
+    fn load_or_default(path: &Path) -> Self {
+        if path.exists() {
+            if let Ok(data) = fs::read(path) {
+                if let Ok(cfg) = serde_json::from_slice::<AuthConfig>(&data) {
+                    return cfg;
+                }
+            }
+        }
+        let def = Self::default_config();
+        let _ = def.save(path);
+        def
+    }
+
+    fn save(&self, path: &Path) -> std::io::Result<()> {
+        let data = serde_json::to_vec_pretty(self)?;
+        write_atomic(path, &data)
+    }
+
+    fn verify(&self, input: &str) -> bool {
+        let hash = hash_secret(&self.salt, input);
+        self.password_hash == hash
+    }
+
+    fn update_password(&mut self, new_pass: &str, path: &Path) -> std::io::Result<()> {
+        let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_nanos();
+        self.salt = format!("s_{:x}", now);
+        self.password_hash = hash_secret(&self.salt, new_pass);
+        self.save(path)
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize, Default)]
@@ -148,10 +232,14 @@ struct AppState {
     server_ip: String,
     active_profile_name: String,
     watchdog_recoveries: u64,
+    auth: AuthConfig,
+    active_sessions: HashSet<String>,
 }
 
 impl AppState {
     fn new(cfg: Config) -> Self {
+        let auth_path = cfg.auth_path();
+        let auth = AuthConfig::load_or_default(&auth_path);
         let mut state = Self {
             cfg,
             started_at: Instant::now(),
@@ -161,6 +249,8 @@ impl AppState {
             server_ip: String::new(),
             active_profile_name: String::new(),
             watchdog_recoveries: 0,
+            auth,
+            active_sessions: HashSet::new(),
         };
         state.adopt_existing_pid();
         state
@@ -1290,6 +1380,133 @@ fn parse_hilink_signal(xml: &str) -> Option<Value> {
     }))
 }
 
+fn extract_auth_token(req: &Request) -> Option<String> {
+    for h in req.headers() {
+        let name = h.field.as_str().as_str();
+        if name.eq_ignore_ascii_case("X-Auth-Token") {
+            let val = h.value.as_str().trim();
+            if !val.is_empty() {
+                return Some(val.to_string());
+            }
+        }
+        if name.eq_ignore_ascii_case("Authorization") {
+            let val = h.value.as_str().trim();
+            if val.to_ascii_lowercase().starts_with("bearer ") {
+                let token = val[7..].trim();
+                if !token.is_empty() {
+                    return Some(token.to_string());
+                }
+            }
+        }
+        if name.eq_ignore_ascii_case("Cookie") {
+            let val = h.value.as_str();
+            for part in val.split(';') {
+                let p = part.trim();
+                if p.starts_with("xray_token=") {
+                    let token = p["xray_token=".len()..].trim();
+                    if !token.is_empty() {
+                        return Some(token.to_string());
+                    }
+                }
+            }
+        }
+    }
+    None
+}
+
+fn handle_auth_check(req: &Request, shared: &Arc<Mutex<AppState>>) -> Response<std::io::Cursor<Vec<u8>>> {
+    let token = extract_auth_token(req);
+    let st = shared.lock().unwrap();
+    let is_authed = match token {
+        Some(t) => st.active_sessions.contains(&t),
+        None => false,
+    };
+    json_response(200, json!({
+        "ok": true,
+        "authenticated": is_authed
+    }))
+}
+
+fn handle_auth_login(req: &mut Request, shared: &Arc<Mutex<AppState>>) -> Response<std::io::Cursor<Vec<u8>>> {
+    let raw = match read_body_limited(req, 16 * 1024) {
+        Ok(b) => b,
+        Err(e) => return json_response(400, json!({"ok": false, "error": e})),
+    };
+    let body: Value = match serde_json::from_slice(&raw) {
+        Ok(v) => v,
+        Err(e) => return json_response(400, json!({"ok": false, "error": format!("Invalid JSON: {}", e)})),
+    };
+    let pass = body.get("password").and_then(|v| v.as_str()).unwrap_or("");
+    let mut st = shared.lock().unwrap();
+    if st.auth.verify(pass) {
+        let token = generate_session_token();
+        st.active_sessions.insert(token.clone());
+        let cookie_val = format!("xray_token={}; Path=/; HttpOnly; SameSite=Lax; Max-Age=2592000", token);
+        let header = Header::from_bytes("Set-Cookie", cookie_val.as_bytes()).unwrap();
+        let data = serde_json::to_vec(&json!({
+            "ok": true,
+            "token": token,
+            "message": "Login berhasil!"
+        })).unwrap();
+        let h_type = Header::from_bytes("Content-Type", "application/json; charset=utf-8").unwrap();
+        Response::from_data(data)
+            .with_status_code(StatusCode(200))
+            .with_header(h_type)
+            .with_header(header)
+    } else {
+        json_response(401, json!({
+            "ok": false,
+            "error": "Password salah! (Bawaan awal: admin)"
+        }))
+    }
+}
+
+fn handle_auth_logout(req: &Request, shared: &Arc<Mutex<AppState>>) -> Response<std::io::Cursor<Vec<u8>>> {
+    if let Some(t) = extract_auth_token(req) {
+        let mut st = shared.lock().unwrap();
+        st.active_sessions.remove(&t);
+    }
+    let h_type = Header::from_bytes("Content-Type", "application/json; charset=utf-8").unwrap();
+    let h_cookie = Header::from_bytes("Set-Cookie", "xray_token=; Path=/; HttpOnly; Max-Age=0").unwrap();
+    let data = serde_json::to_vec(&json!({"ok": true, "message": "Logout berhasil"})).unwrap();
+    Response::from_data(data)
+        .with_status_code(StatusCode(200))
+        .with_header(h_type)
+        .with_header(h_cookie)
+}
+
+fn handle_auth_password(req: &mut Request, shared: &Arc<Mutex<AppState>>) -> Response<std::io::Cursor<Vec<u8>>> {
+    let raw = match read_body_limited(req, 16 * 1024) {
+        Ok(b) => b,
+        Err(e) => return json_response(400, json!({"ok": false, "error": e})),
+    };
+    let body: Value = match serde_json::from_slice(&raw) {
+        Ok(v) => v,
+        Err(e) => return json_response(400, json!({"ok": false, "error": format!("Invalid JSON: {}", e)})),
+    };
+    let old_pw = body.get("old_password").and_then(|v| v.as_str()).unwrap_or("");
+    let new_pw = body.get("new_password").and_then(|v| v.as_str()).unwrap_or("");
+
+    if new_pw.trim().len() < 4 {
+        return json_response(400, json!({"ok": false, "error": "Password baru minimal 4 karakter!"}));
+    }
+
+    let mut st = shared.lock().unwrap();
+    if !st.auth.verify(old_pw) {
+        return json_response(401, json!({"ok": false, "error": "Password lama salah!"}));
+    }
+
+    let path = st.cfg.auth_path();
+    if let Err(e) = st.auth.update_password(new_pw.trim(), &path) {
+        return json_response(500, json!({"ok": false, "error": format!("Gagal menyimpan password: {}", e)}));
+    }
+
+    json_response(200, json!({
+        "ok": true,
+        "message": "Password berhasil diubah!"
+    }))
+}
+
 fn main() {
     let cfg = Config::from_env();
     let _ = fs::create_dir_all(&cfg.base_dir);
@@ -1315,10 +1532,45 @@ fn main() {
         let method = request.method().clone();
         let mut should_exit_for_ota = false;
 
+        let is_public = matches!(
+            (method.clone(), url_path),
+            (Method::Get, "/")
+                | (Method::Get, "/index.html")
+                | (Method::Get, "/favicon.ico")
+                | (Method::Get, "/api/ping")
+                | (Method::Get, "/api/auth/check")
+                | (Method::Post, "/api/auth/login")
+        );
+
+        if !is_public && url_path.starts_with("/api/") {
+            let token = extract_auth_token(&request);
+            let authed = match token {
+                Some(t) => {
+                    let st = shared.lock().unwrap();
+                    st.active_sessions.contains(&t)
+                }
+                None => false,
+            };
+            if !authed {
+                let resp = json_response(401, json!({
+                    "ok": false,
+                    "error": "Sesi belum terautentikasi atau telah berakhir",
+                    "auth_required": true
+                }));
+                let _ = request.respond(resp);
+                continue;
+            }
+        }
+
         let response = match (method, url_path) {
             (Method::Get, "/") | (Method::Get, "/index.html") => html_response(INDEX_HTML),
-            (Method::Get, "/api/status") => handle_status(&shared),
+            (Method::Get, "/favicon.ico") => json_response(404, json!({})),
             (Method::Get, "/api/ping") => json_response(200, json!({"ok": true})),
+            (Method::Get, "/api/auth/check") => handle_auth_check(&request, &shared),
+            (Method::Post, "/api/auth/login") => handle_auth_login(&mut request, &shared),
+            (Method::Post, "/api/auth/logout") => handle_auth_logout(&request, &shared),
+            (Method::Post, "/api/auth/password") => handle_auth_password(&mut request, &shared),
+            (Method::Get, "/api/status") => handle_status(&shared),
             (Method::Get, "/api/profiles") => handle_get_profiles(&shared),
             (Method::Post, "/api/profiles") => handle_post_profiles(&mut request, &shared),
             (Method::Post, "/api/power") => handle_power(&mut request, &shared),

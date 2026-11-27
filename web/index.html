@@ -412,6 +412,65 @@
 
 <div id="toast" class="toast"></div>
 <div class="container">
+
+  <!-- AUTH VIEW (LOGIN SCREEN) -->
+  <div id="auth-view" style="display:none;min-height:75vh;align-items:center;justify-content:center;padding:24px 0">
+    <div class="card" style="max-width:420px;width:100%;margin:auto;text-align:center;box-shadow:0 16px 40px rgba(0,0,0,0.7),0 0 30px rgba(236,72,153,0.25)">
+      <div style="width:68px;height:68px;margin:0 auto 14px;border-radius:18px;background:linear-gradient(135deg,rgba(236,72,153,0.2),rgba(0,242,254,0.15));border:1px solid var(--sakura);display:flex;align-items:center;justify-content:center;box-shadow:0 0 20px rgba(255,117,151,0.3)">
+        <svg style="width:42px;height:42px" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="gHeadAuth" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#ff7597"/>
+              <stop offset="50%" stop-color="#a855f7"/>
+              <stop offset="100%" stop-color="#00f2fe"/>
+            </linearGradient>
+            <linearGradient id="gVisorAuth" x1="12" y1="23" x2="36" y2="23" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#00f2fe"/>
+              <stop offset="100%" stop-color="#ff7597"/>
+            </linearGradient>
+          </defs>
+          <polygon points="12,20 8,8 20,14" fill="url(#gHeadAuth)"/>
+          <polygon points="36,20 40,8 28,14" fill="url(#gHeadAuth)"/>
+          <circle cx="24" cy="27" r="15" fill="#18132c" stroke="url(#gHeadAuth)" stroke-width="2.2"/>
+          <rect x="14" y="23" width="20" height="7" rx="3.5" fill="url(#gVisorAuth)"/>
+          <circle cx="19" cy="26.5" r="1.5" fill="#fff"/>
+          <circle cx="29" cy="26.5" r="1.5" fill="#fff"/>
+          <path d="M22 33.5 Q24 35.5 26 33.5" stroke="#fdf4f8" stroke-width="1.6" stroke-linecap="round"/>
+        </svg>
+      </div>
+
+      <h2 style="font-size:1.32rem;font-weight:750;margin-bottom:4px;color:#fff">Erlkim Xray Panel</h2>
+      <div style="font-size:.76rem;color:var(--sakura);margin-bottom:20px;letter-spacing:1px;font-weight:600">
+        AUTHENTICATION REQUIRED <span class="jp-sub">認証</span>
+      </div>
+
+      <form onsubmit="handleLogin(event)" style="text-align:left">
+        <div class="field" style="margin-bottom:14px">
+          <label style="font-size:.76rem;color:var(--muted);display:flex;justify-content:space-between;margin-bottom:6px">
+            <span>Password Akses Panel</span>
+            <span style="color:var(--sakura);cursor:pointer;user-select:none" onclick="togglePassVisibility('login-pw')">👁️ Lihat</span>
+          </label>
+          <input type="password" id="login-pw" placeholder="Masukkan password (bawaan: admin)" autocomplete="current-password" required style="font-size:.92rem;padding:11px 12px;background:var(--bg-card2);border:1px solid var(--border);border-radius:10px;color:#fff;width:100%">
+        </div>
+
+        <div class="row-check" style="margin:10px 0 18px">
+          <input type="checkbox" id="login-remember" checked>
+          <label for="login-remember" style="font-size:.75rem">Ingat saya di browser ini (30 hari)</label>
+        </div>
+
+        <button type="submit" id="btn-login" class="btn btn-primary" style="width:100%;padding:12px;font-size:.9rem;justify-content:center">
+          🔓 Masuk ke Panel
+        </button>
+      </form>
+
+      <div style="margin-top:16px;font-size:.72rem;color:var(--muted)">
+        💡 Password awal bawaan: <strong style="color:var(--sakura)">admin</strong> (dapat diubah di tab Pengaturan)
+      </div>
+    </div>
+  </div>
+
+  <!-- AUTHENTICATED MAIN VIEW -->
+  <div id="main-view" style="display:none">
   <header>
     <div class="brand">
       <div class="brand-icon">
@@ -458,7 +517,10 @@
         <small id="hdr-sub">Huawei B310s-927 • ARMv7</small>
       </div>
     </div>
-    <span id="hdr-badge" class="badge badge-off">DISCONNECTED</span>
+    <div style="display:flex;align-items:center;gap:8px">
+      <span id="hdr-badge" class="badge badge-off">DISCONNECTED</span>
+      <button class="btn btn-ghost btn-sm" onclick="logout()" title="Kunci &amp; Logout Panel" style="padding:4px 9px;font-size:.72rem;border-color:rgba(236,72,153,0.35);color:var(--sakura-light)">🔒 Logout</button>
+    </div>
   </header>
 
   <!-- TAB HOME -->
@@ -841,6 +903,36 @@
       <div id="ota-status" style="font-size:.8rem;color:var(--muted);margin-top:8px"></div>
     </div>
 
+    <!-- CARD GANTI PASSWORD -->
+    <div class="card">
+      <div class="card-title">
+        <span>Keamanan Panel (Ganti Password) <span class="jp-sub">パスワード変更</span></span>
+        <span class="badge badge-on" style="font-size:.65rem">SECURITY</span>
+      </div>
+      <p style="font-size:.78rem;color:var(--muted);margin-bottom:12px">
+        Ubah password akses web panel untuk mencegah akses tanpa izin dari perangkat lain di jaringan router:
+      </p>
+      
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Password Lama</label>
+          <input type="password" id="pw-old" placeholder="Password saat ini (bawaan: admin)">
+        </div>
+        <div class="form-group">
+          <label>Password Baru</label>
+          <input type="password" id="pw-new" placeholder="Minimal 4 karakter">
+        </div>
+        <div class="form-group">
+          <label>Konfirmasi Password Baru</label>
+          <input type="password" id="pw-confirm" placeholder="Ulangi password baru">
+        </div>
+      </div>
+
+      <div style="margin-top:12px;display:flex;justify-content:flex-end">
+        <button class="btn btn-primary" onclick="changePanelPassword()">💾 Simpan Password Baru</button>
+      </div>
+    </div>
+
     <div class="card">
       <div class="card-title"><span>Tentang Panel <span class="jp-sub">パネル概要</span></span></div>
       <div class="about-list">
@@ -849,13 +941,14 @@
         <div class="about-row"><span>Tema UI</span><strong style="color:var(--sakura)">Cyberpunk Sakura Anime</strong></div>
         <div class="about-row"><span>Protokol Didukung</span><strong>VLESS • VMess • Trojan</strong></div>
         <div class="about-row"><span>Arsitektur</span><strong>Rust Static + Vanilla SPA (Zero-CDN)</strong></div>
-        <div class="about-row"><span>Fitur Keamanan</span><strong>Anti-Loop NAT • Watchdog 30s • OTA</strong></div>
+        <div class="about-row"><span>Fitur Keamanan</span><strong>Auth Password • Anti-Loop NAT • Watchdog 30s • OTA</strong></div>
       </div>
     </div>
   </section>
+  </div> <!-- END #main-view -->
 </div>
 
-<nav class="tabs">
+<nav id="main-nav" class="tabs" style="display:none">
   <button class="active" data-tab="home" onclick="switchTab('home',this)">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 10.5L12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>
     Home
@@ -880,6 +973,131 @@ let state = { active_id: null, profiles: [] };
 let currentRunning = false;
 let currentPlatform = 'linux';
 let currentTab = 'home';
+let appInitialized = false;
+
+function getAuthHeaders() {
+  const t = localStorage.getItem('xray_token') || '';
+  return t ? { 'X-Auth-Token': t } : {};
+}
+
+async function api(url, opts = {}) {
+  opts.headers = Object.assign({}, getAuthHeaders(), opts.headers || {});
+  const r = await fetch(url, opts);
+  if (r.status === 401 && !url.includes('/api/auth/')) {
+    showAuthView();
+    throw new Error('Sesi telah berakhir atau belum login');
+  }
+  return r;
+}
+
+function showAuthView() {
+  const av = $('auth-view');
+  const mv = $('main-view');
+  const mn = $('main-nav');
+  if (av) av.style.display = 'flex';
+  if (mv) mv.style.display = 'none';
+  if (mn) mn.style.display = 'none';
+  if ($('login-pw')) {
+    $('login-pw').value = '';
+    setTimeout(() => $('login-pw').focus(), 100);
+  }
+}
+
+function showMainView() {
+  const av = $('auth-view');
+  const mv = $('main-view');
+  const mn = $('main-nav');
+  if (av) av.style.display = 'none';
+  if (mv) mv.style.display = 'block';
+  if (mn) mn.style.display = 'flex';
+}
+
+function togglePassVisibility(id) {
+  const el = $(id);
+  if (!el) return;
+  el.type = el.type === 'password' ? 'text' : 'password';
+}
+
+async function handleLogin(e) {
+  if (e) e.preventDefault();
+  const pw = $('login-pw').value;
+  const btn = $('btn-login');
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = 'Memverifikasi...';
+  }
+  try {
+    const r = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password: pw })
+    });
+    const d = await r.json();
+    if (d.ok && d.token) {
+      localStorage.setItem('xray_token', d.token);
+      toast('Login berhasil! Selamat datang.');
+      showMainView();
+      if (!appInitialized) {
+        appInitialized = true;
+        initApp();
+      } else {
+        fetchStatus();
+      }
+    } else {
+      toast(d.error || 'Password salah!');
+      if ($('login-pw')) {
+        $('login-pw').focus();
+        $('login-pw').select();
+      }
+    }
+  } catch (err) {
+    toast('Gagal login: ' + err.message);
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = '🔓 Masuk ke Panel';
+    }
+  }
+}
+
+async function logout() {
+  if (!confirm('Yakin ingin mengunci dan keluar dari panel?')) return;
+  try {
+    await fetch('/api/auth/logout', { method: 'POST', headers: getAuthHeaders() });
+  } catch {}
+  localStorage.removeItem('xray_token');
+  toast('Anda telah logout dari panel.');
+  showAuthView();
+}
+
+async function changePanelPassword() {
+  const oldPw = $('pw-old').value;
+  const newPw = $('pw-new').value;
+  const confirmPw = $('pw-confirm').value;
+
+  if (!oldPw) return toast('Masukkan password lama!');
+  if (!newPw || newPw.trim().length < 4) return toast('Password baru minimal 4 karakter!');
+  if (newPw !== confirmPw) return toast('Konfirmasi password baru tidak cocok!');
+
+  try {
+    const r = await api('/api/auth/password', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ old_password: oldPw, new_password: newPw.trim() })
+    });
+    const d = await r.json();
+    if (d.ok) {
+      toast('Password berhasil diubah! Gunakan password baru saat login berikutnya.');
+      $('pw-old').value = '';
+      $('pw-new').value = '';
+      $('pw-confirm').value = '';
+    } else {
+      toast('Gagal: ' + (d.error || 'Password lama salah!'));
+    }
+  } catch (err) {
+    toast('Gagal ubah password: ' + err.message);
+  }
+}
 
 function toast(msg, ms = 2800) {
   const t = $('toast');
@@ -1207,7 +1425,7 @@ function importProfiles(input) {
 }
 
 async function persistProfiles() {
-  const r = await fetch('/api/profiles', {
+  const r = await api('/api/profiles', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(state)
@@ -1300,7 +1518,7 @@ async function togglePower() {
   btn.classList.add('busy');
   try {
     if (currentRunning) {
-      const r = await fetch('/api/power', {
+      const r = await api('/api/power', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'stop' })
       });
@@ -1311,7 +1529,7 @@ async function togglePower() {
       const p = getActiveProfile();
       if (!p) throw new Error('Pilih atau buat profil dulu di tab Profiles');
       const config = buildXrayConfig(p);
-      const r = await fetch('/api/power', {
+      const r = await api('/api/power', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           action: 'start',
@@ -1335,7 +1553,7 @@ async function togglePower() {
 
 async function fetchStatus() {
   try {
-    const r = await fetch('/api/status');
+    const r = await api('/api/status');
     const d = await r.json();
     currentRunning = !!d.running;
     if (d.platform) currentPlatform = d.platform;
@@ -1456,7 +1674,7 @@ async function fetchLogs(force = false) {
   try {
     const sel = window.getSelection && window.getSelection().toString();
     if (!force && sel) return;
-    const r = await fetch('/api/logs');
+    const r = await api('/api/logs');
     const d = await r.json();
     const nextText = d.logs || '(Log masih kosong)';
     if (!force && nextText === lastLogText) return;
@@ -1474,7 +1692,7 @@ async function copyLogs() {
 }
 
 async function clearLogs() {
-  await fetch('/api/logs', { method: 'DELETE' });
+  await api('/api/logs', { method: 'DELETE' });
   lastLogText = null;
   fetchLogs(true);
   toast('Log dibersihkan');
@@ -1489,6 +1707,8 @@ function uploadOta() {
   fill.style.width = '0%';
   const xhr = new XMLHttpRequest();
   xhr.open('POST', '/api/update');
+  const t = localStorage.getItem('xray_token') || '';
+  if (t) xhr.setRequestHeader('X-Auth-Token', t);
   xhr.upload.onprogress = e => {
     if (e.lengthComputable) {
       const pct = Math.round((e.loaded / e.total) * 100);
@@ -1574,7 +1794,7 @@ function selectBandOption(b) {
 async function applyBandLock() {
   toast('Mengunci modem ke band ' + selectedBand + '...');
   try {
-    const r = await fetch('/api/modem/band', {
+    const r = await api('/api/modem/band', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ band: selectedBand })
@@ -1597,7 +1817,7 @@ async function changeModemIp() {
   btn.textContent = '⏳ Mengganti IP...';
   toast('Memutus & menyambung data seluler...');
   try {
-    const r = await fetch('/api/modem/change-ip', { method: 'POST' });
+    const r = await api('/api/modem/change-ip', { method: 'POST' });
     const d = await r.json();
     toast(d.message || 'IP operator berhasil diganti!');
     setTimeout(() => {
@@ -1616,7 +1836,7 @@ async function changeModemIp() {
 function rebootModem() {
   if (!confirm('Yakin ingin merestart router modem Huawei B310s?')) return;
   toast('Mengirim sinyal reboot router...');
-  fetch('/api/modem/reboot', { method: 'POST' }).then(() => {
+  api('/api/modem/reboot', { method: 'POST' }).then(() => {
     toast('Router sedang restart! Halaman akan reload dalam 30 detik...', 6000);
     setTimeout(() => location.reload(), 30000);
   }).catch(() => toast('Gagal mengirim perintah reboot'));
@@ -1629,7 +1849,7 @@ async function sendUssd() {
   resBox.style.display = 'block';
   resBox.textContent = 'Memanggil ' + code + '...\nMenunggu balasan operator...';
   try {
-    const r = await fetch('/api/modem/ussd', {
+    const r = await api('/api/modem/ussd', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ code })
@@ -1647,7 +1867,7 @@ async function fetchModemSignal(force = false) {
   if (!force && now - lastSignalTime < 2500) return;
   lastSignalTime = now;
   try {
-    const r = await fetch('/api/modem/signal?t=' + Date.now());
+    const r = await api('/api/modem/signal?t=' + Date.now());
     const d = await r.json();
     if (!d.ok) return;
 
@@ -1707,9 +1927,9 @@ async function fetchModemSignal(force = false) {
   } catch (_) {}
 }
 
-async function init() {
+async function initApp() {
   try {
-    const r = await fetch('/api/profiles');
+    const r = await api('/api/profiles');
     state = await r.json();
     if (!Array.isArray(state.profiles)) state.profiles = [];
     renderProfiles();
@@ -1723,7 +1943,25 @@ async function init() {
   }, 3000);
 }
 
-init();
+async function checkAuthAndInit() {
+  try {
+    const r = await fetch('/api/auth/check', { headers: getAuthHeaders() });
+    const d = await r.json();
+    if (d.ok && d.authenticated) {
+      showMainView();
+      if (!appInitialized) {
+        appInitialized = true;
+        initApp();
+      }
+    } else {
+      showAuthView();
+    }
+  } catch (_) {
+    showAuthView();
+  }
+}
+
+checkAuthAndInit();
 </script>
 </body>
 </html>
