@@ -95,7 +95,11 @@ cargo build --release
 Terdapat dua metode pemasangan yang dapat dipilih:
 
 ### Metode 1: Flashing Firmware Modifikasi .BIN (Rekomendasi - Permanen & Terintegrasi WebUI)
-Jika Anda menggunakan firmware hasil injeksi (`B310s-927_UPDATE_..._XRAY_MOD.BIN`):
+
+> [!NOTE]
+> File firmware binary (`.BIN`) hasil modifikasi tidak diunggah ke repositori publik ini karena batasan ukuran berkas dan lisensi proprietary vendor. **Bagi yang berminat atau membutuhkan file firmware `.BIN` siap pakai ini, silakan hubungi saya melalui [GitHub Issues](https://github.com/erlk1m/B310-Xray-Panel/issues) atau kontak profil GitHub [@erlk1m](https://github.com/erlk1m).**
+
+Bagi yang sudah memiliki file firmware hasil injeksi:
 1. Pastikan router dalam mode USB Flashing / Multicast Upgrade (menggunakan *Huawei Multicast Upgrade Tool* atau *balong_flash*).
 2. Lakukan flashing file `.BIN` modifikasi ke router.
 3. Setelah proses selesai dan router restart:
